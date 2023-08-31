@@ -422,7 +422,7 @@ The first section in this block says which LEAP scenario to send and retrieve re
 If this section is omitted, then results are sent to and retrieved from the scenario currently active in LEAP, and for the currently active region (if any regions are specified). The `last_historical_year` is set to the start year.
 ```yaml
 #---------------------------------------------------------------------------
-# Parameters for running LEAP with the AMES model (AMES)
+# Parameters for running LEAP with the AMES model
 #---------------------------------------------------------------------------
 # Core information for the LEAP application (optional)
 LEAP-info:

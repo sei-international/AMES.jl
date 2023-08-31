@@ -1,25 +1,25 @@
-# LEAPMacro
+# AMES
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sei-international.github.io/LEAPMacro.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sei-international.github.io/LEAPMacro.jl/dev)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://sei-international.github.io/AMES.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://sei-international.github.io/AMES.jl/dev)
 
-LEAP-Macro is an economic extension, the **Macro** model, to the Low Emissions Analysis Platform, [LEAP](https://leap.sei.org/).
+AMES, the Adaptable Macroeconomic Extension for Sustainability analysis, is an economic extension to the Low Emissions Analysis Platform, [LEAP](https://leap.sei.org/). It can also be linked to other models.
 
-The Macro model, which is written in [Julia](https://julialang.org/), provides economic drivers to LEAP. LEAP provides energy-related investment expenditure to Macro. The two models are run iteratively until they converge, which normally happens within 2-3 cycles.
+The AMES model, which is written in [Julia](https://julialang.org/), provides economic drivers to LEAP. LEAP provides energy-related investment expenditure to AMES. The two models are run iteratively until they converge, which normally happens within 2-3 cycles.
 
-Development of LEAP-Macro is led by the [Stockholm Environment Institute (SEI)](https://www.sei.org/).
+Development of AMES is led by the [Stockholm Environment Institute (SEI)](https://www.sei.org/).
 
-# Getting started with LEAP-Macro
+# Getting started with AMES
 
-For instructions on installing and using LEAP-Macro, see the [documentation](https://sei-international.github.io/LEAPMacro.jl/).
+For instructions on installing and using AMES, see the [documentation](https://sei-international.github.io/AMES.jl/).
 
-# Contributing to LEAP-Macro
+# Contributing to AMES
 
-If you are interested in contributing to LEAP-Macro, please contact [Eric Kemp-Benedict](https://www.sei.org/people/eric-kemp-benedict/).
+If you are interested in contributing to AMES, please contact [Eric Kemp-Benedict](https://www.sei.org/people/eric-kemp-benedict/).
 
 # Licensing and attribution
 
-LEAP-Macro's Julia code is made available under the Apache License, Version 2.0. See [LICENSE.md](LICENSE.md) for details, including attribution requirements and limitations on use.
+AMES's Julia code is made available under the Apache License, Version 2.0. See [LICENSE.md](LICENSE.md) for details, including attribution requirements and limitations on use.
 
 # For more information
 

@@ -26,7 +26,7 @@ As explained under [Quick Start](@ref quick-start), a full AMES model for the Fr
 !!! info "The LEAP Areas folder"
     Normally the LEAP Areas folder is located in your Windows user’s _Documents_ folder. To verify the location on your computer, open LEAP and look in `Settings > Folders > Areas`.
 
-![Unzipping the macro.zip files](assets/images/leap_exercise/unzip_macro.png)
+![Unzipping the AMES.zip files](assets/images/leap_exercise/unzip_macro.png)
 
 ## Modifying LEAP
 The next steps involve modifying LEAP so that it can interface with the AMES model. Not many changes are needed, and all of them are in Key Assumptions.

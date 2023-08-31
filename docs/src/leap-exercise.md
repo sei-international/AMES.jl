@@ -26,8 +26,6 @@ As explained under [Quick Start](@ref quick-start), a full AMES model for the Fr
 !!! info "The LEAP Areas folder"
     Normally the LEAP Areas folder is located in your Windows user’s _Documents_ folder. To verify the location on your computer, open LEAP and look in `Settings > Folders > Areas`.
 
-![Unzipping the AMES.zip files](assets/images/leap_exercise/unzip_ames.png)
-
 ## Modifying LEAP
 The next steps involve modifying LEAP so that it can interface with the AMES model. Not many changes are needed, and all of them are in Key Assumptions.
 
@@ -78,7 +76,7 @@ Enter a value of 22 million people for Current Accounts:
 ![Setting employment in the current accounts](assets/images/leap_exercise/set_empl.png)
 
 ### Adding investment costs
-In the configuration file for AMES, the sectors Coal Mining (s_coal), Petroleum and Natural Gas (s_petr) and Electricity, Water, and Sewage (s_util) are excluded from the calculations, on the understanding that they are tracked in LEAP. That means that AMES will not estimate investment expenditure for those sectors, which can be an important source of demand, which affects economic output and energy demand. When energy-related investment costs are included in the model, they are collected and added to total investment demand in the AMES model. LEAP and AMES are run iteratively to convergence.
+In the configuration file for AMES, the sectors Coal Mining (`s_coal`), Petroleum and Natural Gas (`s_petr`) and Electricity, Water, and Sewage (`s_util`) are excluded from the calculations, on the understanding that they are tracked in LEAP. That means that AMES will not estimate investment expenditure for those sectors, which can be an important source of demand, which affects economic output and energy demand. When energy-related investment costs are included in the model, they are collected and added to total investment demand in the AMES model. LEAP and AMES are run iteratively to convergence.
 
 To add investment costs, first switch on costing by going to the Scope & Scale tab of the **Settings** screen and enable **Costs**. The Costs tab will become active. The settings on the Costs tab do not affect the link to the AMES model, so you can close the dialog.
 
@@ -98,7 +96,7 @@ Make sure you are in Current Accounts. Then, go to the “Transformation\Electri
     The default units for capital costs in the Freedonia LEAP Area are US\$/MW. They must be changed to 1000 US\$/MW or to US\$/kW, or the numbers in the table above must be multiplied by 1000 before entering them into LEAP. If this is not done, then the investment values passed to AMES will appear (incorrectly) to be negligibly small.
 
 ## Running AMES
-AMES can be run using a Visual Basic script that is provided with the sample files. Go into the _LEAP Areas\Freedonia\AMES_ folder and open the _LEAP Areas\Freedonia\AMES\scripts_ folder. Copy the `AMES_AMESModelCalc.vbs` file from that folder into the main Freedonia LEAP area folder.
+AMES can be run using a Visual Basic script that is provided with the sample files. Go into the _LEAP Areas\Freedonia\AMES_ folder and open the _LEAP Areas\Freedonia\AMES\scripts_ folder. Copy the `AMESModelCalc.vbs` file from that folder into the main Freedonia LEAP area folder.
 
 Before running the file, edit the [configuration file](@ref config) `AMES_params.yml` to set the parameter `run_leap` to `true`:
 ```yaml

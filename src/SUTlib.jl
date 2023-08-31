@@ -1,12 +1,12 @@
-"Module `SUTlib` exports functions for parsing the configuration file, supply-use table, and paramter files for `LEAPMacro.jl`"
+"Module `SUTlib` exports functions for parsing the configuration file, supply-use table, and paramter files for `AMES.jl`"
 module SUTlib
 using CSV, DataFrames, LinearAlgebra, YAML, Logging, Formatting
 
 export process_sut, initialize_prices, parse_param_file,
        SUTdata, PriceData, ExogParams, TechChangeParams
 
-include("./LEAPMacrolib.jl")
-using .LMlib
+include("./AMESlib.jl")
+using .AMESlib
 
 "Values calculated from supply-use and associated tables"
 mutable struct SUTdata
@@ -68,7 +68,7 @@ mutable struct TechChangeParams
     coefficients::Array{Float64,2} # np,ns
 end
 
-"Read LEAP-Macro model configuration file (in YAML syntax). Add or modify entries as needed."
+"Read AMES model configuration file (in YAML syntax). Add or modify entries as needed."
 function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Bool = false)
     global_params = YAML.load_file(YAML_file)
 
@@ -85,16 +85,16 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
 
 	# First, check if any sectors or products should be excluded because production is zero (or effectively zero, for products)
 	SUT_df = CSV.read(joinpath("inputs",global_params["files"]["SUT"]), header=false, DataFrame)
-	M = vec(sum(LMlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["imports"]), dims=2))
-	supply_table = LMlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["supply_table"])
+	M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["imports"]), dims=2))
+	supply_table = AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["supply_table"])
 	qs = vec(sum(supply_table, dims=2))
 	g = vec(sum(supply_table, dims=1))
-    M_equiv = transpose(supply_table) * Diagonal(1 ./ (qs .+ LMlib.ϵ)) * M
+    M_equiv = transpose(supply_table) * Diagonal(1 ./ (qs .+ AMESlib.ϵ)) * M
     # Remove all sectors for which there is negligible domestic production relative to imports or where g = 0
 	θ = global_params["domestic_production_share_threshold"]/100
 	zero_domprod_ndxs = findall(x -> x <= 0, min(g, (1 - θ) * g - θ * M_equiv))
     # Remove all products for which there is negligible total supply (domestic + imported) relative to total domestic output
-	zero_prod_ndxs = findall(x -> abs(x) < LMlib.ϵ, (qs + M)/sum(g))
+	zero_prod_ndxs = findall(x -> abs(x) < AMESlib.ϵ, (qs + M)/sum(g))
 
 	all_sectors = CSV.read(joinpath("inputs",global_params["files"]["sector_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
 	all_products = CSV.read(joinpath("inputs",global_params["files"]["product_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
@@ -102,26 +102,26 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     product_codes = all_products[:code]
 
     # Get lists of excluded sectors other than energy, defaulting to empty list
-    if !LMlib.haskeyvalue(global_params, "excluded_sectors")
+    if !AMESlib.haskeyvalue(global_params, "excluded_sectors")
         global_params["excluded_sectors"] = Dict()
     end
-    if !LMlib.haskeyvalue(global_params["excluded_sectors"], "territorial_adjustment")
+    if !AMESlib.haskeyvalue(global_params["excluded_sectors"], "territorial_adjustment")
         global_params["excluded_sectors"]["territorial_adjustment"] = []
     end
-    if !LMlib.haskeyvalue(global_params["excluded_sectors"], "others")
+    if !AMESlib.haskeyvalue(global_params["excluded_sectors"], "others")
         global_params["excluded_sectors"]["others"] = []
     end
 	excluded_sectors = vcat(global_params["excluded_sectors"]["territorial_adjustment"],
 							global_params["excluded_sectors"]["others"])
 
     # Get lists of excluded products other than energy, defaulting to empty list
-    if !LMlib.haskeyvalue(global_params, "excluded_products")
+    if !AMESlib.haskeyvalue(global_params, "excluded_products")
         global_params["excluded_products"] = Dict()
     end
-    if !LMlib.haskeyvalue(global_params["excluded_products"], "territorial_adjustment")
+    if !AMESlib.haskeyvalue(global_params["excluded_products"], "territorial_adjustment")
         global_params["excluded_products"]["territorial_adjustment"] = []
     end
-    if !LMlib.haskeyvalue(global_params["excluded_products"], "others")
+    if !AMESlib.haskeyvalue(global_params["excluded_products"], "others")
         global_params["excluded_products"]["others"] = []
     end
     excluded_products = vcat(global_params["excluded_products"]["territorial_adjustment"],
@@ -130,18 +130,18 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     # Unless energy sectors & products are included in the calculation, get the lists of excluded energy sectors & products
     if !include_energy_sectors
         # Energy sectors
-        if !LMlib.haskeyvalue(global_params["excluded_sectors"], "energy")
+        if !AMESlib.haskeyvalue(global_params["excluded_sectors"], "energy")
             global_params["excluded_sectors"]["energy"] = []
         end
         excluded_sectors = vcat(excluded_sectors, global_params["excluded_sectors"]["energy"])
         # Energy products
-        if !LMlib.haskeyvalue(global_params["excluded_products"], "energy")
+        if !AMESlib.haskeyvalue(global_params["excluded_products"], "energy")
             global_params["excluded_products"]["energy"] = []
         end
         excluded_products = vcat(excluded_products, global_params["excluded_products"]["energy"])
     end
 
-	# These are the indexes used for the Macro model
+	# These are the indexes used for the AMES model
 	user_defined_sector_ndxs = findall(.!in(excluded_sectors).(sector_codes))
 	user_defined_product_ndxs = findall(.!in(excluded_products).(product_codes))
 	global_params["sector-indexes"] = sort(setdiff(user_defined_sector_ndxs, zero_domprod_ndxs))
@@ -169,20 +169,20 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
 	global_params["non-tradeable-range"] = findall(in(global_params["non_tradeable_products"]).(global_params["included_product_codes"]))
 
     # Default LEAP driver variable is production, but can set to "VA" for "Value added"
-    if LMlib.haskeyvalue(global_params, "LEAP-drivers") && LMlib.haskeyvalue(global_params["LEAP-drivers"], "default")
+    if AMESlib.haskeyvalue(global_params, "LEAP-drivers") && AMESlib.haskeyvalue(global_params["LEAP-drivers"], "default")
         default_LEAP_driver = global_params["LEAP-drivers"]["default"]
     else
         default_LEAP_driver = "PROD"
     end
-    if LMlib.haskeyvalue(global_params, "LEAP-drivers") && LMlib.haskeyvalue(global_params["LEAP-drivers"], "options")
+    if AMESlib.haskeyvalue(global_params, "LEAP-drivers") && AMESlib.haskeyvalue(global_params["LEAP-drivers"], "options")
         LEAP_drivers = global_params["LEAP-drivers"]["options"]
     else
         LEAP_drivers = Dict("PROD" => "production", "VA" => "value added")
     end
-    if LMlib.haskeyvalue(global_params, "LEAP-sectors")
+    if AMESlib.haskeyvalue(global_params, "LEAP-sectors")
         # Optionally override the default LEAP driver
-        global_params["LEAP_sector_drivers"] = [LMlib.haskeyvalue(x, "driver") ? x["driver"] : default_LEAP_driver for x in global_params["LEAP-sectors"]]
-        # LEAP sectors allow for multiple Macro sector codes (production or value added is summed) and multiple branch/variable combos (the index is applied to each combination)
+        global_params["LEAP_sector_drivers"] = [AMESlib.haskeyvalue(x, "driver") ? x["driver"] : default_LEAP_driver for x in global_params["LEAP-sectors"]]
+        # LEAP sectors allow for multiple AMES sector codes (production or value added is summed) and multiple branch/variable combos (the index is applied to each combination)
         global_params["LEAP_sector_names"] = [x["name"] for x in global_params["LEAP-sectors"]]
         LEAP_sector_codes = [x["codes"] for x in global_params["LEAP-sectors"]]
         global_params["LEAP_sector_indices"] = Array{Any}(undef,length(LEAP_sector_codes))
@@ -196,40 +196,40 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     end
     for d in global_params["LEAP_sector_drivers"]
         if d ∉ keys(LEAP_drivers)
-            throw(DomainError(d, format(LMlib.gettext("LEAP driver must be one of \"{1}\""), join(keys(LEAP_drivers), "\", \""))))
+            throw(DomainError(d, format(AMESlib.gettext("LEAP driver must be one of \"{1}\""), join(keys(LEAP_drivers), "\", \""))))
             break
         end
     end
 
     # Investment function parameters
-    if !LMlib.haskeyvalue(global_params, "investment-fcn")
+    if !AMESlib.haskeyvalue(global_params, "investment-fcn")
         # This entry must be present
         throw(KeyError("investment-fcn"))
     end
     # Default is that the profit rate is based on realized profits
-    if !LMlib.haskeyvalue(global_params["investment-fcn"], "use_profits_at_full_capacity")
+    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "use_profits_at_full_capacity")
         global_params["investment-fcn"]["use_profits_at_full_capacity"] = false
     end
     # If missing, quietly set to zero (the base model)
-    if !LMlib.haskeyvalue(global_params["investment-fcn"], "net_export")
+    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "net_export")
         global_params["investment-fcn"]["net_export"] = 0.0
     end
     # Set the following to zero if absent, but issue a warning
-    if !LMlib.haskeyvalue(global_params["investment-fcn"], "util_sens")
-        @warn LMlib.gettext("Parameter 'util_sens' is missing from the configuration file: setting to zero")
+    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "util_sens")
+        @warn AMESlib.gettext("Parameter 'util_sens' is missing from the configuration file: setting to zero")
         global_params["investment-fcn"]["util_sens"] = 0.0
     end
-    if !LMlib.haskeyvalue(global_params["investment-fcn"], "profit_sens")
-        @warn LMlib.gettext("Parameter 'profit_sens' is missing from the configuration file: setting to zero")
+    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "profit_sens")
+        @warn AMESlib.gettext("Parameter 'profit_sens' is missing from the configuration file: setting to zero")
         global_params["investment-fcn"]["profit_sens"] = 0.0
     end
-    if !LMlib.haskeyvalue(global_params["investment-fcn"], "intrate_sens")
-        @warn LMlib.gettext("Parameter 'intrate_sens' is missing from the configuration file: setting to zero")
+    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "intrate_sens")
+        @warn AMESlib.gettext("Parameter 'intrate_sens' is missing from the configuration file: setting to zero")
         global_params["investment-fcn"]["intrate_sens"] = 0.0
     end
 
     # Labor productivity growth parameters
-    if !LMlib.haskeyvalue(global_params, "labor-prod-fcn")
+    if !AMESlib.haskeyvalue(global_params, "labor-prod-fcn")
         global_params["labor-prod-fcn"] = Dict()
         global_params["labor-prod-fcn"]["use_KV_model"] = true
         global_params["labor-prod-fcn"]["use_sector_params_if_available"] = true
@@ -237,21 +237,21 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
         global_params["labor-prod-fcn"]["KV_coeff_default"] = 0.5
         global_params["labor-prod-fcn"]["KV_intercept_default"] = 0.0
     else
-        if !LMlib.haskeyvalue(global_params["labor-prod-fcn"], "use_KV_model")
+        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "use_KV_model")
             # If this key is missing and there are no defaults for the KV parameters, presume that a specified labor productivity is intended
-            global_params["labor-prod-fcn"]["use_KV_model"] = LMlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_coeff_default") ||
-                                                              LMlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_intercept_default")
+            global_params["labor-prod-fcn"]["use_KV_model"] = AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_coeff_default") ||
+                                                              AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_intercept_default")
         end
-        if !LMlib.haskeyvalue(global_params["labor-prod-fcn"], "use_sector_params_if_available")
+        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "use_sector_params_if_available")
             global_params["labor-prod-fcn"]["use_sector_params_if_available"] = true
         end
-        if !LMlib.haskeyvalue(global_params["labor-prod-fcn"], "labor_prod_gr_default")
+        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "labor_prod_gr_default")
             global_params["labor-prod-fcn"]["labor_prod_gr_default"] = 0.0
         end
-        if !LMlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_coeff_default")
+        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_coeff_default")
             global_params["labor-prod-fcn"]["KV_coeff_default"] = 0.5
         end
-        if !LMlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_intercept_default")
+        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_intercept_default")
             global_params["labor-prod-fcn"]["KV_intercept_default"] = 0.0
         end
     end
@@ -271,43 +271,43 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     end
 
     # Wage function defaults
-    if !LMlib.haskeyvalue(global_params, "wage-fcn")
+    if !AMESlib.haskeyvalue(global_params, "wage-fcn")
         global_params["wage-fcn"] = Dict()
         global_params["wage-fcn"]["infl_passthrough"] = 1.0
         global_params["wage-fcn"]["lab_constr_coeff"] = 0.0
     else
-        if !LMlib.haskeyvalue(global_params["wage-fcn"], "infl_passthrough")
+        if !AMESlib.haskeyvalue(global_params["wage-fcn"], "infl_passthrough")
             global_params["wage-fcn"]["infl_passthrough"] = 1.0
         end
-        if !LMlib.haskeyvalue(global_params["wage-fcn"], "lab_constr_coeff")
+        if !AMESlib.haskeyvalue(global_params["wage-fcn"], "lab_constr_coeff")
             global_params["wage-fcn"]["lab_constr_coeff"] = 0.0
         end
     end
 
     # Intermediate coefficient technological change
-    if LMlib.haskeyvalue(global_params, "tech-param-change")
+    if AMESlib.haskeyvalue(global_params, "tech-param-change")
         # Backwards compatability: Allow either "rate_constant" or "rate_constant_default"
-        if LMlib.haskeyvalue(global_params["tech-param-change"], "rate_constant") && !LMlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default")
+        if AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant") && !AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default")
             global_params["tech-param-change"]["rate_constant_default"] = global_params["tech-param-change"]["rate_constant"]
         end
-        if LMlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default") || LMlib.haskeyvalue(global_params["tech-param-change"], "exponent_default")
-            if !LMlib.haskeyvalue(global_params["tech-param-change"], "calculate")
+        if AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default") || AMESlib.haskeyvalue(global_params["tech-param-change"], "exponent_default")
+            if !AMESlib.haskeyvalue(global_params["tech-param-change"], "calculate")
                 global_params["tech-param-change"]["calculate"] = true
             end
         else
             # If no parameter defaults, calculate only if use_sector_params_if_available explicitly set to true
-            if !LMlib.haskeyvalue(global_params["tech-param-change"], "calculate")
-                global_params["tech-param-change"]["calculate"] = LMlib.haskeyvalue(global_params["tech-param-change"], "use_sector_params_if_available") &&
+            if !AMESlib.haskeyvalue(global_params["tech-param-change"], "calculate")
+                global_params["tech-param-change"]["calculate"] = AMESlib.haskeyvalue(global_params["tech-param-change"], "use_sector_params_if_available") &&
                                                                     global_params["tech-param-change"]["use_sector_params_if_available"]
             end
         end
-        if !LMlib.haskeyvalue(global_params["tech-param-change"], "use_sector_params_if_available")
+        if !AMESlib.haskeyvalue(global_params["tech-param-change"], "use_sector_params_if_available")
             global_params["tech-param-change"]["use_sector_params_if_available"] = true
         end
-        if !LMlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default")
+        if !AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default")
             global_params["tech-param-change"]["rate_constant_default"] = 0.0
         end
-        if !LMlib.haskeyvalue(global_params["tech-param-change"], "exponent_default")
+        if !AMESlib.haskeyvalue(global_params["tech-param-change"], "exponent_default")
             global_params["tech-param-change"]["exponent_default"] = 2.0
         end
     else
@@ -319,17 +319,17 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     end
 
     # Provide defaults for the initial value adjustment (calibration) block
-    if LMlib.haskeyvalue(global_params, "calib")
-        if !LMlib.haskeyvalue(global_params["calib"], "nextper_inv_adj_factor")
+    if AMESlib.haskeyvalue(global_params, "calib")
+        if !AMESlib.haskeyvalue(global_params["calib"], "nextper_inv_adj_factor")
             global_params["calib"]["nextper_inv_adj_factor"] = 0.0
         end
-        if !LMlib.haskeyvalue(global_params["calib"], "max_export_adj_factor")
+        if !AMESlib.haskeyvalue(global_params["calib"], "max_export_adj_factor")
             global_params["calib"]["max_export_adj_factor"] = 0.0
         end
-        if !LMlib.haskeyvalue(global_params["calib"], "max_hh_dmd_adj_factor")
+        if !AMESlib.haskeyvalue(global_params["calib"], "max_hh_dmd_adj_factor")
             global_params["calib"]["max_hh_dmd_adj_factor"] = 0.0
         end
-        if !LMlib.haskeyvalue(global_params["calib"], "pot_output_adj_factor")
+        if !AMESlib.haskeyvalue(global_params["calib"], "pot_output_adj_factor")
             global_params["calib"]["pot_output_adj_factor"] = 0.0
         end
     else
@@ -344,17 +344,17 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     # LEAP-related parameters
     #------------------------------------------------
     # Provide defaults for the LEAP model execution parameters if needed
-    if LMlib.haskeyvalue(global_params, "model")
-        if !LMlib.haskeyvalue(global_params["model"], "run_leap")
+    if AMESlib.haskeyvalue(global_params, "model")
+        if !AMESlib.haskeyvalue(global_params["model"], "run_leap")
             global_params["model"]["run_leap"] = false
         end
-        if !LMlib.haskeyvalue(global_params["model"], "hide_leap")
+        if !AMESlib.haskeyvalue(global_params["model"], "hide_leap")
             global_params["model"]["hide_leap"] = false
         end
-        if !LMlib.haskeyvalue(global_params["model"], "max_runs")
+        if !AMESlib.haskeyvalue(global_params["model"], "max_runs")
             global_params["model"]["max_runs"] = 5
         end
-        if !LMlib.haskeyvalue(global_params["model"], "max_tolerance")
+        if !AMESlib.haskeyvalue(global_params["model"], "max_tolerance")
             global_params["model"]["max_tolerance"] = 5.0
         end
     else
@@ -366,8 +366,8 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
         global_params["model"]["max_tolerance"] = 5.0
     end
 
-    # LEAP potential output is specified for a single Macro sector code, but allows for multiple branch/variable combos (values are summed)
-    if LMlib.haskeyvalue(global_params, "LEAP-potential-output")
+    # LEAP potential output is specified for a single AMES sector code, but allows for multiple branch/variable combos (values are summed)
+    if AMESlib.haskeyvalue(global_params, "LEAP-potential-output")
         LEAP_potout_codes = [x["code"] for x in global_params["LEAP-potential-output"]]
         # If the sector code is not included, report its index as "missing"
         global_params["LEAP_potout_indices"] = Array{Union{Missing, Int64}}(missing, length(LEAP_potout_codes))
@@ -375,15 +375,15 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
             if LEAP_potout_codes[i] in global_params["included_sector_codes"]
                 global_params["LEAP_potout_indices"][i] = findall(x -> x == LEAP_potout_codes[i], global_params["included_sector_codes"])[1]
             else
-                @warn format(LMlib.gettext("Sector code '{1}' is listed in 'LEAP-potential-output' but is not included in the Macro model calculations"), LEAP_potout_codes[i])
+                @warn format(AMESlib.gettext("Sector code '{1}' is listed in 'LEAP-potential-output' but is not included in the AMES model calculations"), LEAP_potout_codes[i])
             end
         end
     else
         global_params["LEAP_potout_indices"] = []
     end
 
-    # LEAP prices are drawn from a single LEAP branch, but can be assigned to multiple Macro product codes
-    if LMlib.haskeyvalue(global_params, "LEAP-prices")
+    # LEAP prices are drawn from a single LEAP branch, but can be assigned to multiple AMES product codes
+    if AMESlib.haskeyvalue(global_params, "LEAP-prices")
         LEAP_price_codes = [x["codes"] for x in global_params["LEAP-prices"]]
         global_params["LEAP_price_indices"] = Array{Any}(undef,length(LEAP_price_codes))
         for i in eachindex(LEAP_price_codes)
@@ -394,26 +394,26 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     end
 
     # Check that LEAP-info keys are reported
-    if LMlib.haskeyvalue(global_params, "LEAP-info")
+    if AMESlib.haskeyvalue(global_params, "LEAP-info")
         # Key "scenario" is specified, which overrides "input_scenario" and "result_scenario"
-        if LMlib.haskeyvalue(global_params["LEAP-info"], "scenario")
+        if AMESlib.haskeyvalue(global_params["LEAP-info"], "scenario")
             global_params["LEAP-info"]["input_scenario"] = global_params["LEAP-info"]["scenario"]
             global_params["LEAP-info"]["result_scenario"] = global_params["LEAP-info"]["scenario"]
         end
         # Key "input_scenario" is missing, so default to empty string (so that the currently loaded scenario in LEAP is used)
-        if !LMlib.haskeyvalue(global_params["LEAP-info"], "input_scenario")
+        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "input_scenario")
             global_params["LEAP-info"]["input_scenario"] = ""
         end
         # Key "result_scenario" is not specified, so it defaults to "input_scenario"
-        if !LMlib.haskeyvalue(global_params["LEAP-info"], "result_scenario")
+        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "result_scenario")
             global_params["LEAP-info"]["result_scenario"] = global_params["LEAP-info"]["input_scenario"]
         end
         # Key "region" is missing, so default to empty string
-        if !LMlib.haskeyvalue(global_params["LEAP-info"], "region")
+        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "region")
             global_params["LEAP-info"]["region"] = ""
         end
         # Key "last_historical_year" is missing, so default to start of scenario
-        if !LMlib.haskeyvalue(global_params["LEAP-info"], "last_historical_year")
+        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "last_historical_year")
             global_params["LEAP-info"]["last_historical_year"] = global_params["years"]["start"]
         end
     else
@@ -426,42 +426,42 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     # If running LEAP, ensure that LEAP historical year is within year range
     if global_params["model"]["run_leap"]
         if global_params["LEAP-info"]["last_historical_year"] < global_params["years"]["start"]
-            throw(ErrorException(format(LMlib.gettext("LEAP last historical year {1} is earlier than the start year {2}"),
+            throw(ErrorException(format(AMESlib.gettext("LEAP last historical year {1} is earlier than the start year {2}"),
                     global_params["LEAP-info"]["last_historical_year"], global_params["years"]["start"])))
         elseif global_params["LEAP-info"]["last_historical_year"] > global_params["years"]["end"]
-            throw(ErrorException(format(LMlib.gettext("LEAP last historical year {1} is later than the end year {2}"),
+            throw(ErrorException(format(AMESlib.gettext("LEAP last historical year {1} is later than the end year {2}"),
             global_params["LEAP-info"]["last_historical_year"], global_params["years"]["end"])))
         end
     end
 
     # Check that LEAP-investment keys are reported
-    if LMlib.haskeyvalue(global_params, "LEAP-investment")
+    if AMESlib.haskeyvalue(global_params, "LEAP-investment")
         # Key "inv_costs_unit" is missing, so apply the default
-        if !LMlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_unit")
+        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_unit")
             global_params["LEAP-investment"]["inv_costs_unit"] = ""
         end
         # Key "inv_costs_scale" is missing, so default to 1.0
-        if !LMlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_scale")
+        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_scale")
             global_params["LEAP-investment"]["inv_costs_scale"] = 1.0
         end
         # Key "inv_costs_apply_xr" is missing, so default to false
-        if !LMlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_apply_xr")
+        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_apply_xr")
             global_params["LEAP-investment"]["inv_costs_apply_xr"] = false
         end
         # Key "excluded_branches" is missing, so default to empty list
-        if !LMlib.haskeyvalue(global_params["LEAP-investment"], "excluded_branches")
+        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "excluded_branches")
             global_params["LEAP-investment"]["excluded_branches"] = []
         end
         # Key "distribute_costs_over" is missing, so default to 1 year
-        if !LMlib.haskeyvalue(global_params["LEAP-investment"], "distribute_costs_over")
+        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "distribute_costs_over")
             global_params["LEAP-investment"]["distribute_costs_over"] = Dict("default" => 1, "by_branch" => [])
         else
             # Key "default" is missing, so default to 1 year
-            if !LMlib.haskeyvalue(global_params["LEAP-investment"]["distribute_costs_over"], "default")
+            if !AMESlib.haskeyvalue(global_params["LEAP-investment"]["distribute_costs_over"], "default")
                 global_params["LEAP-investment"]["distribute_costs_over"]["default"] = 1
             end
             # Key "by_branch" is missing, so default to empty list
-            if !LMlib.haskeyvalue(global_params["LEAP-investment"]["distribute_costs_over"], "by_branch")
+            if !AMESlib.haskeyvalue(global_params["LEAP-investment"]["distribute_costs_over"], "by_branch")
                 global_params["LEAP-investment"]["distribute_costs_over"]["by_branch"] = []
             end
         end
@@ -515,7 +515,7 @@ function get_var_params(params::Dict)
     prod_codes = product_info[prod_ndxs,:code]
 
     # Catch if the "xr-is-normal" flag is present or not, default to false
-    if !LMlib.haskeyvalue(params["files"], "xr-is-real")
+    if !AMESlib.haskeyvalue(params["files"], "xr-is-real")
         params["files"]["xr-is-real"] = false
     end
 
@@ -524,34 +524,34 @@ function get_var_params(params::Dict)
     pot_output_df = nothing
     max_util_df = nothing
     real_price_df = nothing
-    if LMlib.haskeyvalue(params, "exog-files")
+    if AMESlib.haskeyvalue(params, "exog-files")
         file_list = params["exog-files"]
-        if LMlib.haskeyvalue(file_list, "investment")
+        if AMESlib.haskeyvalue(file_list, "investment")
             if isfile(joinpath("inputs",file_list["investment"]))
                 investment_df = CSV.read(joinpath("inputs",file_list["investment"]), DataFrame)
             else
-                @warn format(LMlib.gettext("Exogenous investment file '{1}' does not exist in the 'inputs' folder"), file_list["investment"])
+                @warn format(AMESlib.gettext("Exogenous investment file '{1}' does not exist in the 'inputs' folder"), file_list["investment"])
             end
         end
-        if LMlib.haskeyvalue(file_list, "pot_output")
+        if AMESlib.haskeyvalue(file_list, "pot_output")
             if isfile(joinpath("inputs",file_list["pot_output"]))
                 pot_output_df = CSV.read(joinpath("inputs",file_list["pot_output"]), DataFrame)
             else
-                @warn format(LMlib.gettext("Exogenous potential output file '{1}' does not exist in the 'inputs' folder"), file_list["pot_output"])
+                @warn format(AMESlib.gettext("Exogenous potential output file '{1}' does not exist in the 'inputs' folder"), file_list["pot_output"])
             end
         end
-        if LMlib.haskeyvalue(file_list, "max_utilization")
+        if AMESlib.haskeyvalue(file_list, "max_utilization")
             if isfile(joinpath("inputs",file_list["max_utilization"]))
                 max_util_df = CSV.read(joinpath("inputs",file_list["max_utilization"]), DataFrame)
             else
-                @warn format(LMlib.gettext("Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"), file_list["max_utilization"])
+                @warn format(AMESlib.gettext("Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"), file_list["max_utilization"])
             end
         end
-        if LMlib.haskeyvalue(file_list, "real_price")
+        if AMESlib.haskeyvalue(file_list, "real_price")
             if isfile(joinpath("inputs",file_list["real_price"]))
                 real_price_df = CSV.read(joinpath("inputs",file_list["real_price"]), DataFrame)
             else
-                @warn format(LMlib.gettext("Exogenous real price file '{1}' does not exist in the 'inputs' folder"), file_list["real_price"])
+                @warn format(AMESlib.gettext("Exogenous real price file '{1}' does not exist in the 'inputs' folder"), file_list["real_price"])
             end
         end
     end
@@ -708,13 +708,13 @@ function get_var_params(params::Dict)
             if !ismissing(working_age_grs_temp[year_ndx])
                 push!(retval_exog.working_age_grs, working_age_grs_temp[year_ndx])
             else
-                error_string = format(LMlib.gettext("Value for working age growth rate missing in year {1:d}, with no default"), year)
+                error_string = format(AMESlib.gettext("Value for working age growth rate missing in year {1:d}, with no default"), year)
                 throw(MissingException(error_string))
             end
             if !ismissing(xr_temp[year_ndx])
                 push!(retval_exog.xr, xr_temp[year_ndx])
             else
-                error_string = format(LMlib.gettext("Value for exchange rate missing in year {1:d}, with no default"), year)
+                error_string = format(AMESlib.gettext("Value for exchange rate missing in year {1:d}, with no default"), year)
                 throw(MissingException(error_string))
             end
             # These have defaults
@@ -741,7 +741,7 @@ function get_var_params(params::Dict)
                 end
             end
         else
-			error_string = format(LMlib.gettext("Year {1:d} is not in time series range {2:d}:{3:d}"), year, data_start_year, data_end_year)
+			error_string = format(AMESlib.gettext("Year {1:d} is not in time series range {2:d}:{3:d}"), year, data_start_year, data_end_year)
             throw(DomainError(year, error_string))
         end
 
@@ -777,7 +777,7 @@ function get_var_params(params::Dict)
         # Check that all simulation years are covered
         missing_years = setdiff(sim_years, intersect(sim_years, floor.(Int64, pot_output_df[!,:year])))
         if !isempty(missing_years)
-            throw(ErrorException(format(LMlib.gettext("Exogenous potential output file '{1}' does not contain all simulation years. Missing {2}."),
+            throw(ErrorException(format(AMESlib.gettext("Exogenous potential output file '{1}' does not contain all simulation years. Missing {2}."),
                   params["exog-files"]["pot_output"], join(missing_years, ", "))))
         end
         data_sec_codes = names(pot_output_df)[2:end]
@@ -788,9 +788,9 @@ function get_var_params(params::Dict)
             invalid_sec_ndxs = findall(x -> isnothing(x), data_sec_ndxs)
             invalid_sec_codes = data_sec_codes[invalid_sec_ndxs]
             if length(invalid_sec_codes) > 1
-                invalid_sec_codes_str = format(LMlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["pot_output"])
+                invalid_sec_codes_str = format(AMESlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["pot_output"])
             else
-                invalid_sec_codes_str = format(LMlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["pot_output"])
+                invalid_sec_codes_str = format(AMESlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["pot_output"])
             end
             deleteat!(data_sec_ndxs, invalid_sec_ndxs)
             pot_output_df = pot_output_df[:,Not(1 .+ invalid_sec_ndxs)]
@@ -813,9 +813,9 @@ function get_var_params(params::Dict)
             invalid_sec_ndxs = findall(x -> isnothing(x), data_sec_ndxs)
             invalid_sec_codes = data_sec_codes[invalid_sec_ndxs]
             if length(invalid_sec_codes) > 1
-                invalid_sec_codes_str = format(LMlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["max_utilization"])
+                invalid_sec_codes_str = format(AMESlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["max_utilization"])
             else
-                invalid_sec_codes_str = format(LMlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["max_utilization"])
+                invalid_sec_codes_str = format(AMESlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["max_utilization"])
             end
             deleteat!(data_sec_ndxs, invalid_sec_ndxs)
             max_util_df = max_util_df[:,Not(1 .+ invalid_sec_ndxs)]
@@ -833,7 +833,7 @@ function get_var_params(params::Dict)
         # Check that all simulation years are covered
         missing_years = setdiff(sim_years, intersect(sim_years, floor.(Int64, real_price_df[!,:year])))
         if !isempty(missing_years)
-            throw(ErrorException(format(LMlib.gettext("Exogenous prices file '{1}' does not contain all simulation years. Missing {2}."),
+            throw(ErrorException(format(AMESlib.gettext("Exogenous prices file '{1}' does not contain all simulation years. Missing {2}."),
                   params["exog-files"]["real_price"], join(missing_years, ", "))))
         end
         data_prod_codes = names(real_price_df)[2:end]
@@ -844,9 +844,9 @@ function get_var_params(params::Dict)
             invalid_prod_ndxs = findall(x -> isnothing(x), data_prod_ndxs)
             invalid_prod_codes = data_prod_codes[invalid_prod_ndxs]
             if length(invalid_prod_codes) > 1
-                invalid_prod_codes_str = format(LMlib.gettext("Product codes '{1}' in input file '{2}' not valid"), join(invalid_prod_codes, "', '"), params["exog-files"]["real_price"])
+                invalid_prod_codes_str = format(AMESlib.gettext("Product codes '{1}' in input file '{2}' not valid"), join(invalid_prod_codes, "', '"), params["exog-files"]["real_price"])
             else
-                invalid_prod_codes_str = format(LMlib.gettext("Product code '{1}' in input file '{2}' not valid"), invalid_prod_codes[1], params["exog-files"]["real_price"])
+                invalid_prod_codes_str = format(AMESlib.gettext("Product code '{1}' in input file '{2}' not valid"), invalid_prod_codes[1], params["exog-files"]["real_price"])
             end
             deleteat!(data_prod_ndxs, invalid_prod_ndxs)
             real_price_df = real_price_df[:,Not(1 .+ invalid_prod_ndxs)]
@@ -883,17 +883,17 @@ function energy_nonenergy_link_measure(params::Dict)
 	#--------------------------------
 	# Compute S matrix
 	#--------------------------------
-	supply_table = LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[full_product_ndxs,full_sector_ndxs]
+	supply_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[full_product_ndxs,full_sector_ndxs]
 	V = transpose(supply_table)
 	qs = vec(sum(V, dims=1))
 	g = vec(sum(V, dims=2))
-	S = V * Diagonal(1.0 ./ (qs .+ LMlib.ϵ))
+	S = V * Diagonal(1.0 ./ (qs .+ AMESlib.ϵ))
 
 	#--------------------------------
 	# Compute D matrix
 	#--------------------------------
-	use_table = LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[full_product_ndxs,full_sector_ndxs]
-	D = use_table * Diagonal(1.0 ./ (g .+ LMlib.ϵ))
+	use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[full_product_ndxs,full_sector_ndxs]
+	D = use_table * Diagonal(1.0 ./ (g .+ AMESlib.ϵ))
 
 	#--------------------------------
 	# Compute A matrix and Leontief matrix
@@ -957,30 +957,30 @@ function process_sut(params::Dict)
 	#--------------------------------
 	# Supply table
 	#--------------------------------
-	supply_table = LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[product_ndxs,sector_ndxs]
+	supply_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[product_ndxs,sector_ndxs]
 	V = transpose(supply_table)
 	qs = vec(sum(V, dims=1))
-	retval.S = V * Diagonal(1 ./ (qs .+ LMlib.ϵ))
+	retval.S = V * Diagonal(1 ./ (qs .+ AMESlib.ϵ))
     retval.g = vec(sum(V, dims=2))
 	retval.Vnorm = Diagonal(1 ./ retval.g) * V
 
 	# Get total supply column
-	tot_supply = LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_supply"])[product_ndxs]
+	tot_supply = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_supply"])[product_ndxs]
 
 	#--------------------------------
 	# Use table
 	#--------------------------------
-	use_table = LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[product_ndxs,sector_ndxs]
+	use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[product_ndxs,sector_ndxs]
 	retval.D = use_table * Diagonal(1.0 ./ retval.g)
     # For pricing algorithm, keep track of energy cost share if energy sectors are excluded (e.g., when running together with LEAP)
-    energy_use = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[energy_product_ndxs,sector_ndxs], dims=1))
+    energy_use = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[energy_product_ndxs,sector_ndxs], dims=1))
     retval.energy_share = energy_use ./ retval.g
 
 	#--------------------------------
 	# Margins
 	#--------------------------------
-	margins = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[product_ndxs,:], dims=2))
-	margins_stat_adj = sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[terr_adj_product_ndx,:])
+	margins = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[product_ndxs,:], dims=2))
+	margins_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[terr_adj_product_ndx,:])
 	# Calculate margin ratios
     margins_pos = max.(margins, zeros(np))
     margins_pos = margins_pos * (1.0 + margins_stat_adj/sum(margins_pos))
@@ -992,54 +992,54 @@ function process_sut(params::Dict)
 	#--------------------------------
 	# Taxes
 	#--------------------------------
-	taxes = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["taxes"])[product_ndxs,:], dims=2))
+	taxes = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["taxes"])[product_ndxs,:], dims=2))
 
 	#--------------------------------
 	# Imports
 	#--------------------------------
-	M = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[product_ndxs,:], dims=2))
-	M_stat_adj = sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[terr_adj_product_ndx,:])
-    M = M * (1.0 + M_stat_adj/(sum(M) + LMlib.ϵ))
+	M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[product_ndxs,:], dims=2))
+	M_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[terr_adj_product_ndx,:])
+    M = M * (1.0 + M_stat_adj/(sum(M) + AMESlib.ϵ))
     M[params["non-tradeable-range"]] .= 0.0 # If it is declared non-tradeable, set imports to zero
 	retval.M = M
 
 	#--------------------------------
 	# Exports -- will be adjusted later
 	#--------------------------------
-	X = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[product_ndxs,:], dims=2))
-	X_stat_adj = sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[terr_adj_product_ndx,:])
-    X = X * (1.0 + X_stat_adj/(sum(X) + LMlib.ϵ))
+	X = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[product_ndxs,:], dims=2))
+	X_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[terr_adj_product_ndx,:])
+    X = X * (1.0 + X_stat_adj/(sum(X) + AMESlib.ϵ))
     X[params["non-tradeable-range"]] .= 0.0 # If it is declared non-tradeable, set exports to zero
 	retval.X = X
 
 	#--------------------------------
 	# Final demand -- will be adjusted later
 	#--------------------------------
-	F = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[product_ndxs,:], dims=2))
-	F_stat_adj = sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[terr_adj_product_ndx,:])
-    F = F * (1.0 + F_stat_adj/(sum(F) + LMlib.ϵ))
+	F = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[product_ndxs,:], dims=2))
+	F_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[terr_adj_product_ndx,:])
+    F = F * (1.0 + F_stat_adj/(sum(F) + AMESlib.ϵ))
 	retval.F = F
 
 	#--------------------------------
 	# Investment -- will be adjusted later
 	#--------------------------------
-	I = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[product_ndxs,:], dims=2))
-	I_stat_adj = sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[terr_adj_product_ndx,:])
-    I = I * (1.0 + I_stat_adj/(sum(I) + LMlib.ϵ))
+	I = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[product_ndxs,:], dims=2))
+	I_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[terr_adj_product_ndx,:])
+    I = I * (1.0 + I_stat_adj/(sum(I) + AMESlib.ϵ))
 	retval.I = I
 
 	#--------------------------------
 	# Allocate imports (by a common fraction for each product) to final demand and intermediate demand
 	#--------------------------------
-	tot_int_sup = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_supply"])[product_ndxs,:], dims=2))
+	tot_int_sup = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_supply"])[product_ndxs,:], dims=2))
     # The fraction m_frac applies to imports excluding imported investment goods
-    retval.m_frac = retval.M ./ (tot_int_sup + retval.F + retval.I .+ LMlib.ϵ)
+    retval.m_frac = retval.M ./ (tot_int_sup + retval.F + retval.I .+ AMESlib.ϵ)
 	#--------------------------------
 	# Correct demands
 	#--------------------------------
-	stock_change = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["stock_change"])[product_ndxs,:], dims=2))
+	stock_change = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["stock_change"])[product_ndxs,:], dims=2))
     # Correct for stock changes and tax leakage
-    corr = 1 .+ (stock_change - taxes) ./ (retval.F + retval.I + retval.X .+ LMlib.ϵ)
+    corr = 1 .+ (stock_change - taxes) ./ (retval.F + retval.I + retval.X .+ AMESlib.ϵ)
     retval.F = corr .* retval.F
     retval.X = corr .* retval.X
     retval.I = corr .* retval.I
@@ -1047,43 +1047,43 @@ function process_sut(params::Dict)
 	#--------------------------------
 	# Wages
 	#--------------------------------
-	retval.W = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["wages"])[:,sector_ndxs], dims=1))
+	retval.W = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["wages"])[:,sector_ndxs], dims=1))
 
 	#--------------------------------
 	# Profit margin
 	#--------------------------------
-	tot_int_dmd = vec(sum(LMlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_demand"])[:,sector_ndxs], dims=1))
+	tot_int_dmd = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_demand"])[:,sector_ndxs], dims=1))
 	profit = max.(retval.g - tot_int_dmd - retval.W, zeros(ns))
-	retval.μ = retval.g ./ (retval.g - profit .+ LMlib.ϵ)
+	retval.μ = retval.g ./ (retval.g - profit .+ AMESlib.ϵ)
 
     if params["report-diagnostics"]
         qd = vec(sum(use_table, dims=2)) # Assign to a variable for clarity
         # Values by product
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"domestic_production.csv"), qs, "domestic production", params["included_product_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"imports.csv"),  M, "imports", params["included_product_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"margins.csv"),  margins, "margins", params["included_product_codes"])
-		LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"imported_fraction.csv"),  retval.m_frac, "imported fraction", params["included_product_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"tot_intermediate_supply_non-energy_sectors.csv"), qd, "intermediate supply from non-energy sectors", params["included_product_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"tot_intermediate_supply_all_sectors.csv"),  tot_int_sup, "intermediate supply", params["included_product_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"exports.csv"),  retval.X, "exports", params["included_product_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"final_demand.csv"),  retval.F, "final demand", params["included_product_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"investment.csv"),  retval.I, "investment", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"domestic_production.csv"), qs, "domestic production", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"imports.csv"),  M, "imports", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"margins.csv"),  margins, "margins", params["included_product_codes"])
+		AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"imported_fraction.csv"),  retval.m_frac, "imported fraction", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"tot_intermediate_supply_non-energy_sectors.csv"), qd, "intermediate supply from non-energy sectors", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"tot_intermediate_supply_all_sectors.csv"),  tot_int_sup, "intermediate supply", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"exports.csv"),  retval.X, "exports", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"final_demand.csv"),  retval.F, "final demand", params["included_product_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"investment.csv"),  retval.I, "investment", params["included_product_codes"])
         # Values by sector
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"sector_output.csv"), retval.g, "output", params["included_sector_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"tot_intermediate_demand_all_products.csv"),  tot_int_dmd, "intermediate demand", params["included_sector_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"wages.csv"),  retval.W, "wages", params["included_sector_codes"])
-        LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"profit_margins.csv"), retval.μ, "profit margins", params["included_sector_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"sector_output.csv"), retval.g, "output", params["included_sector_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"tot_intermediate_demand_all_products.csv"),  tot_int_dmd, "intermediate demand", params["included_sector_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"wages.csv"),  retval.W, "wages", params["included_sector_codes"])
+        AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"profit_margins.csv"), retval.μ, "profit margins", params["included_sector_codes"])
         if sum(retval.energy_share) != 0
-            LMlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"energy_share.csv"), retval.energy_share, "energy share", params["included_sector_codes"])
+            AMESlib.write_vector_to_csv(joinpath(params["diagnostics_path"],"energy_share.csv"), retval.energy_share, "energy share", params["included_sector_codes"])
         end
         # Matrices
-        LMlib.write_matrix_to_csv(joinpath(params["diagnostics_path"],"supply_fractions.csv"), retval.S, params["included_sector_codes"], params["included_product_codes"])
-        LMlib.write_matrix_to_csv(joinpath(params["diagnostics_path"],"demand_coefficients.csv"), retval.D, params["included_product_codes"], params["included_sector_codes"])
+        AMESlib.write_matrix_to_csv(joinpath(params["diagnostics_path"],"supply_fractions.csv"), retval.S, params["included_sector_codes"], params["included_product_codes"])
+        AMESlib.write_matrix_to_csv(joinpath(params["diagnostics_path"],"demand_coefficients.csv"), retval.D, params["included_product_codes"], params["included_sector_codes"])
 		# Write out nonenergy-energy link metric
         open(joinpath(params["diagnostics_path"],"nonenergy_energy_link_measure.txt"), "w") do fhndl
 			R = 100 .* energy_nonenergy_link_measure(params)
-			A_NE_metric_string = format(LMlib.gettext("This value should be small: {1:.2f}%."), R)
-			println(fhndl, LMlib.gettext("Measure of the significance to the economy of the supply of non-energy goods and services to the energy sector:"))
+			A_NE_metric_string = format(AMESlib.gettext("This value should be small: {1:.2f}%."), R)
+			println(fhndl, AMESlib.gettext("Measure of the significance to the economy of the supply of non-energy goods and services to the energy sector:"))
 		    println(fhndl, A_NE_metric_string)
 		end
     end

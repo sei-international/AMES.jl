@@ -1,13 +1,13 @@
-"Module `LEAPlib` exports functions for linking Macro to LEAP in `LEAPMacro.jl`"
+"Module `LEAPlib` exports functions for linking AMES to LEAP in `AMES.jl`"
 module LEAPlib
 using PyCall, DataFrames, CSV, UUIDs, Formatting
 
 export hide_leap, send_results_to_leap, calculate_leap, get_version_info, get_results_from_leap, LEAPresults
 
-include("./LEAPMacrolib.jl")
-using .LMlib
+include("./AMESlib.jl")
+using .AMESlib
 
-"Values passed from LEAP to Macro"
+"Values passed from LEAP to AMES"
 mutable struct LEAPresults
     I_en::Array{Any,1} # Investment in the energy sector x year
     pot_output::Array{Any,2} # Potential output from LEAP (converted to index) ns x year
@@ -96,7 +96,7 @@ function build_interp_expression(base_year::Integer, newdata::Array; lasthistori
         year = base_year + 1
     end
 
-    # Incorporates Macro results into the rest of the expression
+    # Incorporates AMES results into the rest of the expression
     for i = diff:size(newdata,1)
         if isnan(newdata[i]) == false
             newexpression = string(newexpression, year, ", ", newdata[i], ", ")
@@ -155,13 +155,13 @@ function connect_to_leap()
             max_loops -= 1
         end
         if !LEAPPyObj.ProgramStarted
-            error(LMlib.gettext("LEAP is not responding"))
+            error(AMESlib.gettext("LEAP is not responding"))
             return missing
         else
             return LEAPPyObj
         end
 	catch e
-        error(format(LMlib.gettext("Cannot connect to LEAP: {1}"), sprint(showerror, e)))
+        error(format(AMESlib.gettext("Cannot connect to LEAP: {1}"), sprint(showerror, e)))
 		return missing
 	end
 end  # connect_to_leap
@@ -182,13 +182,13 @@ function calculate_leap(scen_name::AbstractString)
         LEAP.Calculate(false) # This sets RunWEAP = false
         LEAP.SaveArea()
     catch e
-        error(format(LMlib.gettext("Encountered an error when running LEAP: {1}"), sprint(showerror, e)))
+        error(format(AMESlib.gettext("Encountered an error when running LEAP: {1}"), sprint(showerror, e)))
     finally
 	    disconnect_from_leap(LEAP)
     end
 end # calculate_leap
 
-"First obtain LEAP branch info from `params` and then send Macro model results to LEAP."
+"First obtain LEAP branch info from `params` and then send AMES model results to LEAP."
 function send_results_to_leap(params::Dict, indices::Array)
     base_year = params["years"]["start"]
     final_year = params["years"]["end"]
@@ -201,14 +201,14 @@ function send_results_to_leap(params::Dict, indices::Array)
 
 	branch_data = Dict(:branch => String[], :variable => String[], :last_historical_year => Int64[], :col => Int64[])
 	col = 0
-    if LMlib.haskeyvalue(params, "GDP-branch")
+    if AMESlib.haskeyvalue(params, "GDP-branch")
         col += 1
         append!(branch_data[:branch], [params["GDP-branch"]["branch"]])
         append!(branch_data[:variable], [params["GDP-branch"]["variable"]])
         append!(branch_data[:last_historical_year], [params["LEAP-info"]["last_historical_year"]])
         append!(branch_data[:col], [col])
     end
-    if LMlib.haskeyvalue(params, "Employment-branch")
+    if AMESlib.haskeyvalue(params, "Employment-branch")
         col += 1
         append!(branch_data[:branch], [params["Employment-branch"]["branch"]])
         append!(branch_data[:variable], [params["Employment-branch"]["variable"]])
@@ -216,7 +216,7 @@ function send_results_to_leap(params::Dict, indices::Array)
         append!(branch_data[:col], [col])
     end
 
-    if LMlib.haskeyvalue(params, "LEAP-sectors")
+    if AMESlib.haskeyvalue(params, "LEAP-sectors")
         for leap_sector in params["LEAP-sectors"]
             col += 1
             for branch in leap_sector["branches"]
@@ -261,7 +261,7 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
     temp_version = nothing
     if !isnothing(get_results_from_leap_version)
         LEAP.SaveArea
-        temp_version = "LEAPMacro" * string(uuid4())
+        temp_version = "AMES" * string(uuid4())
         LEAP.SaveVersion(temp_version, false)
         LEAP.Versions(get_results_from_leap_version).Revert()
     end
@@ -287,7 +287,7 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
 
     if isa(params["LEAP-investment"]["distribute_costs_over"]["default"], Number)
         # Force to an integer
-        default_build_time = LMlib.float_to_int(params["LEAP-investment"]["distribute_costs_over"]["default"])
+        default_build_time = AMESlib.float_to_int(params["LEAP-investment"]["distribute_costs_over"]["default"])
         default_pattern = ones(default_build_time)/default_build_time
     else
         default_pattern = params["LEAP-investment"]["distribute_costs_over"]["default"]/sum(params["LEAP-investment"]["distribute_costs_over"]["default"])
@@ -304,7 +304,7 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
                     for build_branch in params["LEAP-investment"]["distribute_costs_over"]["by_branch"]
                         if lowercase(build_branch["path"]) == lowercase(b.FullName)
                             if isa(build_branch["value"], Number)
-                                build_time = LMlib.float_to_int(build_branch["value"])
+                                build_time = AMESlib.float_to_int(build_branch["value"])
                                 build_pattern = ones(build_time)/build_time
                             else
                                 build_pattern = build_branch["value"]/sum(build_branch["value"])
@@ -329,12 +329,12 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
             end
         end
 
-        LMlib.write_vector_to_csv(joinpath(params["results_path"],string("I_en_",run_number,".csv")), leapvals.I_en, LMlib.gettext("energy investment"), Vector(sim_years))
+        AMESlib.write_vector_to_csv(joinpath(params["results_path"],string("I_en_",run_number,".csv")), leapvals.I_en, AMESlib.gettext("energy investment"), Vector(sim_years))
 
         #--------------------------------
         # Potential output
         #--------------------------------
-        if LMlib.haskeyvalue(params, "LEAP-potential-output")
+        if AMESlib.haskeyvalue(params, "LEAP-potential-output")
             for i in eachindex(params["LEAP-potential-output"])
                 s = params["LEAP_potout_indices"][i] # This is a single value
                 if !ismissing(s)
@@ -352,7 +352,7 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
         #--------------------------------
         # Energy prices
         #--------------------------------
-        if LMlib.haskeyvalue(params, "LEAP-prices")
+        if AMESlib.haskeyvalue(params, "LEAP-prices")
             for i in eachindex(params["LEAP-prices"])
                 b = params["LEAP-prices"][i] # This is a single branch/variable combination
                 for t in eachindex(sim_years)
@@ -369,7 +369,7 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
         LEAP.ActiveView = Int(AnalysisView)
         if !isnothing(get_results_from_leap_version)
             # From the program logic, there should always be a temp_version != nothing if get_results_from_leap_version != nothing, so assert:
-            @assert !isnothing(temp_version) LMlib.gettext("Getting results from a LEAP version, but no temporary version to revert to")
+            @assert !isnothing(temp_version) AMESlib.gettext("Getting results from a LEAP version, but no temporary version to revert to")
             # Return to the saved (but not calculated) version reflecting state of the application -- will go to most recent
             LEAP.Versions(temp_version).Revert()
             # No longer needed: delete

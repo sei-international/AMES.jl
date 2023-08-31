@@ -1,21 +1,21 @@
 
-#: AMES.jl:951
+#: AMEScore.jl:951
 msgid "Linear goal program failed to solve: {1}"
 msgstr ""
 
-#: AMES.jl:440
+#: AMEScore.jl:440
 msgid "Calibrating for {1}: {2}"
 msgstr ""
 
-#: AMES.jl:454
+#: AMEScore.jl:454
 msgid "basic prices"
 msgstr ""
 
-#: AMES.jl:523
+#: AMEScore.jl:523
 msgid "Year"
 msgstr ""
 
-#: AMES.jl:1069
+#: AMEScore.jl:1069
 msgid "Results did not converge: {1:.2f}% > {2:.2f}% target..."
 msgstr ""
 
@@ -23,11 +23,7 @@ msgstr ""
 msgid "Parameter 'intrate_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
-#: AMES.jl:1054
-msgid "AMES model run ({1})..."
-msgstr ""
-
-#: AMES.jl:450
+#: AMEScore.jl:450
 msgid "final demand"
 msgstr ""
 
@@ -39,7 +35,7 @@ msgstr ""
 msgid "Year {1:d} is not in time series range {2:d}:{3:d}"
 msgstr ""
 
-#: AMES.jl:563
+#: AMEScore.jl:563
 msgid "GDP gr"
 msgstr ""
 
@@ -51,27 +47,27 @@ msgstr ""
 msgid "Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
-#: AMES.jl:453
+#: AMEScore.jl:453
 msgid "intermediate supply from non-energy sectors"
 msgstr ""
 
-#: AMES.jl:449
-msgid "exports"
+#: AMEScore.jl:1054
+msgid "AMES model run ({1})..."
 msgstr ""
 
-#: AMES.jl:1086
-msgid "Sending AMES output to LEAP..."
+#: AMEScore.jl:449
+msgid "exports"
 msgstr ""
 
 #: SUTlib.jl:540
 msgid "Exogenous potential output file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
-#: AMES.jl:445
+#: AMEScore.jl:445
 msgid "wage share"
 msgstr ""
 
-#: AMES.jl:456
+#: AMEScore.jl:456
 msgid "positive margins"
 msgstr ""
 
@@ -83,11 +79,15 @@ msgstr ""
 msgid "Parameter 'profit_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
-#: AMES.jl:1025
+#: AMEScore.jl:1086
+msgid "Sending AMES output to LEAP..."
+msgstr ""
+
+#: AMEScore.jl:1025
 msgid "Cannot connect to LEAP. Please check that LEAP is installed, or set 'run_leap: false' in the configuration file."
 msgstr ""
 
-#: AMES.jl:451
+#: AMEScore.jl:451
 msgid "imports"
 msgstr ""
 
@@ -95,15 +95,15 @@ msgstr ""
 msgid "Cell range '{1}' is not in the correct format (e.g., 'AB3:BG10')"
 msgstr ""
 
-#: AMES.jl:565
+#: AMEScore.jl:565
 msgid "nominal xr index"
 msgstr ""
 
-#: AMES.jl:429; AMES.jl:468
+#: AMEScore.jl:429; AMEScore.jl:468
 msgid "calibration"
 msgstr ""
 
-#: AMES.jl:1093
+#: AMEScore.jl:1093
 msgid "Running LEAP model..."
 msgstr ""
 
@@ -111,7 +111,7 @@ msgstr ""
 msgid "Value for exchange rate missing in year {1:d}, with no default"
 msgstr ""
 
-#: AMES.jl:444
+#: AMEScore.jl:444
 msgid "sector output"
 msgstr ""
 
@@ -119,15 +119,11 @@ msgstr ""
 msgid "Measure of the significance to the economy of the supply of non-energy goods and services to the energy sector:"
 msgstr ""
 
-#: AMES.jl:75
-msgid "AMES exited with an error: Please check the log file '{1}'"
-msgstr ""
-
-#: AMES.jl:564
+#: AMEScore.jl:564
 msgid "labor productivity gr"
 msgstr ""
 
-#: AMES.jl:452
+#: AMEScore.jl:452
 msgid "domestic production"
 msgstr ""
 
@@ -135,15 +131,15 @@ msgstr ""
 msgid "Exogenous prices file '{1}' does not contain all simulation years. Missing {2}."
 msgstr ""
 
-#: AMES.jl:564
+#: AMEScore.jl:564
 msgid "real investment"
 msgstr ""
 
-#: AMES.jl:1059
+#: AMEScore.jl:1059
 msgid "completed"
 msgstr ""
 
-#: AMES.jl:565
+#: AMEScore.jl:565
 msgid "terms of trade index"
 msgstr ""
 
@@ -155,11 +151,15 @@ msgstr ""
 msgid "Product codes '{1}' in input file '{2}' not valid"
 msgstr ""
 
+#: AMES.jl:75
+msgid "AMES exited with an error: Please check the log file '{1}'"
+msgstr ""
+
 #: LEAPlib.jl:158
 msgid "LEAP is not responding"
 msgstr ""
 
-#: AMES.jl:574
+#: AMEScore.jl:574
 msgid "Running from {1} to {2}:"
 msgstr ""
 
@@ -167,27 +167,23 @@ msgstr ""
 msgid "Exogenous real price file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
-#: AMES.jl:563
+#: AMEScore.jl:563
 msgid "net exports to GDP ratio"
 msgstr ""
 
-#: AMES.jl:565
+#: AMEScore.jl:565
 msgid "central bank rate"
 msgstr ""
 
-#: SUTlib.jl:378
-msgid "Sector code '{1}' is listed in 'LEAP-potential-output' but is not included in the AMES model calculations"
-msgstr ""
-
-#: AMES.jl:1033; AMES.jl:1100
+#: AMEScore.jl:1033; AMEScore.jl:1100
 msgid "Obtaining LEAP results..."
 msgstr ""
 
-#: AMES.jl:429; AMES.jl:468; AMES.jl:932
+#: AMEScore.jl:429; AMEScore.jl:468; AMEScore.jl:932
 msgid "model"
 msgstr ""
 
-#: AMES.jl:1047
+#: AMEScore.jl:1047
 msgid "With configuration file '{1}' (including energy sectors):"
 msgstr ""
 
@@ -195,7 +191,7 @@ msgstr ""
 msgid "Sector codes '{1}' in input file '{2}' not valid"
 msgstr ""
 
-#: AMES.jl:944
+#: AMEScore.jl:944
 msgid "Simulating for {1}: {2}"
 msgstr ""
 
@@ -203,7 +199,7 @@ msgstr ""
 msgid "This value should be small: {1:.2f}%."
 msgstr ""
 
-#: AMES.jl:1066
+#: AMEScore.jl:1066
 msgid "Convergence in run number {1} at {2:.2f}% ≤ {3:.2f}% target..."
 msgstr ""
 
@@ -211,19 +207,19 @@ msgstr ""
 msgid "Encountered an error when running LEAP: {1}"
 msgstr ""
 
-#: AMES.jl:563
+#: AMEScore.jl:563
 msgid "net exports"
 msgstr ""
 
-#: AMES.jl:1080
+#: AMEScore.jl:1080
 msgid "Hiding LEAP to improve performance..."
 msgstr ""
 
-#: AMES.jl:327
+#: AMEScore.jl:327
 msgid "Preparing model..."
 msgstr ""
 
-#: AMES.jl:563
+#: AMEScore.jl:563
 msgid "real GDP"
 msgstr ""
 
@@ -231,11 +227,11 @@ msgstr ""
 msgid "Value for working age growth rate missing in year {1:d}, with no default"
 msgstr ""
 
-#: AMES.jl:455
+#: AMEScore.jl:455
 msgid "negative margins"
 msgstr ""
 
-#: AMES.jl:564
+#: AMEScore.jl:564
 msgid "GDP deflator"
 msgstr ""
 
@@ -255,7 +251,7 @@ msgstr ""
 msgid "Exogenous potential output file '{1}' does not contain all simulation years. Missing {2}."
 msgstr ""
 
-#: AMES.jl:165
+#: AMEScore.jl:165
 msgid "Loading data..."
 msgstr ""
 
@@ -263,7 +259,7 @@ msgstr ""
 msgid "Cannot connect to LEAP: {1}"
 msgstr ""
 
-#: AMES.jl:1107
+#: AMEScore.jl:1107
 msgid "Restoring LEAP..."
 msgstr ""
 
@@ -271,7 +267,7 @@ msgstr ""
 msgid "Configuration file '{1}' did not load properly: {2} on line {3:d}"
 msgstr ""
 
-#: AMES.jl:564
+#: AMEScore.jl:564
 msgid "labor force gr"
 msgstr ""
 
@@ -279,19 +275,23 @@ msgstr ""
 msgid "LEAP last historical year {1} is earlier than the start year {2}"
 msgstr ""
 
-#: AMES.jl:1049
+#: SUTlib.jl:378
+msgid "Sector code '{1}' is listed in 'LEAP-potential-output' but is not included in the AMES model calculations"
+msgstr ""
+
+#: AMEScore.jl:1049
 msgid "With configuration file '{1}':"
 msgstr ""
 
-#: AMES.jl:565
+#: AMEScore.jl:565
 msgid "real xr index"
 msgstr ""
 
-#: AMES.jl:1031
+#: AMEScore.jl:1031
 msgid "Obtaining LEAP results from version '{1}'..."
 msgstr ""
 
-#: AMES.jl:446
+#: AMEScore.jl:446
 msgid "capital-output ratio"
 msgstr ""
 
@@ -303,6 +303,6 @@ msgstr ""
 msgid "Product code '{1}' in input file '{2}' not valid"
 msgstr ""
 
-#: AMES.jl:443
+#: AMEScore.jl:443
 msgid "capacity utilization"
 msgstr ""

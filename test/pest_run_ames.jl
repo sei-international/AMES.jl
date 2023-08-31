@@ -1,4 +1,4 @@
-using LEAPMacro
+using AMES
 using YAML
 using ArgParse
 
@@ -11,7 +11,7 @@ function parse_commandline()
         "config-file"
             help = "name of config file"
             arg_type = AbstractString
-            default = "LEAPMacro_params.yml"
+            default = "AMES_params.yml"
             required = false
 		"--sleep", "-s"
 			help = "delay between iterations by this many seconds"
@@ -48,8 +48,8 @@ if parsed_args["calibrate"]
 	if parsed_args["sleep"] >= 0.001
 		sleep(parsed_args["sleep"])
 	end
-	println("Running LEAP-Macro...")
-	res = LEAPMacro.run(parsed_args["config_file"], dump_err_stack = parsed_args["verbose_errors"], include_energy_sectors = true, continue_if_error = true)
+	println("Running AMES...")
+	res = AMES.run(parsed_args["config_file"], dump_err_stack = parsed_args["verbose_errors"], include_energy_sectors = true, continue_if_error = true)
 	
     if res == 0
 		if parsed_args["sleep"] >= 0.001
@@ -70,7 +70,7 @@ if parsed_args["calibrate"]
 		sleep(parsed_args["sleep"])
 	end
 else
-    LEAPMacro.run(parsed_args["config_file"],
+    AMES.run(parsed_args["config_file"],
                   dump_err_stack = parsed_args["verbose_errors"],
                   include_energy_sectors = parsed_args["include_energy_sectors"],
                   continue_if_error = parsed_args["resume_if_error"])

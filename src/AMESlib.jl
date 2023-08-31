@@ -1,5 +1,5 @@
-"Module `LMlib` is a collection of common functions and constants for `LEAPMacro.jl`"
-module LMlib
+"Module `AMESlib` is a collection of common functions and constants for `AMES.jl`"
+module AMESlib
 
 using DataFrames, Formatting, PyCall
 
@@ -17,8 +17,8 @@ const ϵ = 1.0e-11
 "Translate string using gettext"
 function gettext(s::AbstractString)
 	gt = pyimport("gettext")
-	gt.bindtextdomain("LEAPMacro", joinpath(@__DIR__, "locale"))
-	gt.textdomain("LEAPMacro")
+	gt.bindtextdomain("AMES", joinpath(@__DIR__, "locale"))
+	gt.textdomain("AMES")
 	return(gt.gettext(s))
 end
 
@@ -156,4 +156,4 @@ function get_nonmissing_values(A, B)
 	return [if !ismissing(A[i]) A[i] else B[i] end for i in CartesianIndices(A)]
 end
 
-end # LMlib
+end # AMESlib

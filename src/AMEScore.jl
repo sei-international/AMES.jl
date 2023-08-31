@@ -1,13 +1,13 @@
-"Module `Macro`: Implements the macroeconomic model in `LEAPMacro.jl`"
-module Macro
+"Module `AMEScore`: Implements the macroeconomic model in `AMES.jl`"
+module AMEScore
 using JuMP, GLPK, DelimitedFiles, LinearAlgebra, DataFrames, CSV, Logging, Suppressor, Formatting
 
 export leapmacro
 
 include("./SUTlib.jl")
 include("./LEAPlib.jl")
-include("./LEAPMacrolib.jl")
-using .SUTlib, .LEAPlib, .LMlib
+include("./AMESlib.jl")
+using .SUTlib, .LEAPlib, .AMESlib
 
 "Parameters for investment function"
 mutable struct InvestmentFunction
@@ -103,7 +103,7 @@ Calculate growth rate of intermediate demand coefficients (that is, sut.D entrie
   - c(np,ns) = matrix of intercepts (if c = nothing it is set to zero)
   - b(np,ns) = matrix of weights (if b = nothing it is set to one)
 """
-function calc_intermed_techchange(σ::Array{Float64,2}, k::LMlib.NumOrVector, θ::LMlib.NumOrVector = 2.0, c::LMlib.NumOrArray = nothing, b::LMlib.NumOrArray = nothing)
+function calc_intermed_techchange(σ::Array{Float64,2}, k::AMESlib.NumOrVector, θ::AMESlib.NumOrVector = 2.0, c::AMESlib.NumOrArray = nothing, b::AMESlib.NumOrArray = nothing)
 	# Initialize values
 	(np, ns) = size(σ)
 	if isa(k, Number)
@@ -125,9 +125,9 @@ function calc_intermed_techchange(σ::Array{Float64,2}, k::LMlib.NumOrVector, θ
 	
 	cost_shares_exponentiated = [σ[p,s]^θ[s] for p in 1:np, s in 1:ns]
 	denom = sum(cost_shares_exponentiated .* b, dims = 1).^(1.0 .- 1.0 ./ θ)'
-	num = [(cost_shares_exponentiated .* b ./ (σ .+ LMlib.ϵ))[p,s] * k[s] for p in 1:np, s in 1:ns]
+	num = [(cost_shares_exponentiated .* b ./ (σ .+ AMESlib.ϵ))[p,s] * k[s] for p in 1:np, s in 1:ns]
 
-	return c .- num ./ (denom .+ LMlib.ϵ)
+	return c .- num ./ (denom .+ AMESlib.ϵ)
 end # calc_intermed_techchange
 
 "Clean up folders if specified in params"
@@ -159,10 +159,10 @@ function clean_folders(params::Dict)
 	end
 end
 
-"Implement the Macro model. This is the main function for LEAP-Macro"
+"Implement the AMES model. This is the main function for AMES"
 function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Integer, continue_if_error::Bool)
     #------------status
-    @info LMlib.gettext("Loading data...")
+    @info AMESlib.gettext("Loading data...")
     #------------status
 
 	sut, np, ns = SUTlib.process_sut(params)
@@ -170,8 +170,8 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 	exog, techchange = SUTlib.get_var_params(params)
 
 	# Preferentially take exogenous values from LEAP, if specified, if not then from file
-	exog.pot_output = LMlib.get_nonmissing_values(leapvals.pot_output, exog.pot_output)
-	exog.price = LMlib.get_nonmissing_values(leapvals.price, exog.price)
+	exog.pot_output = AMESlib.get_nonmissing_values(leapvals.pot_output, exog.pot_output)
+	exog.price = AMESlib.get_nonmissing_values(leapvals.price, exog.price)
 
 	# For exogenous potential output and world prices, values must be specified for all years, so get indices for first year
 	pot_output_ndxs = findall(x -> !ismissing(x), exog.pot_output[1,:])
@@ -215,7 +215,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		params["taylor-fcn"]["neutral_growth_band"][2], # max_γ0
 		params["taylor-fcn"]["gr_resp"], # gr_resp
 		0.0, # π_targ, assigned below
-		!LMlib.haskeyvalue(params["taylor-fcn"], "target_infl"), # π_targ_use_πw
+		!AMESlib.haskeyvalue(params["taylor-fcn"], "target_infl"), # π_targ_use_πw
 		0.0, # π_init, assigned below
 		params["taylor-fcn"]["infl_resp"], # infl_resp
 		params["taylor-fcn"]["target_intrate"]["init"], # i_targ
@@ -234,7 +234,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		tf.π_targ = exog.πw_base[1]
 	end
 	# If params["taylor-fcn"]["init_infl"] not present, use target
-	if LMlib.haskeyvalue(params["taylor-fcn"], "init_infl")
+	if AMESlib.haskeyvalue(params["taylor-fcn"], "init_infl")
 		tf.π_init = params["taylor-fcn"]["init_infl"]
 	else
 		tf.π_init = tf.π_targ
@@ -324,7 +324,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 	#############################################################################
 
     #------------status
-    @info LMlib.gettext("Preparing model...")
+    @info AMESlib.gettext("Preparing model...")
     #------------status
 
     # model
@@ -426,7 +426,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
     # Calibration run
     #------------------------------------------
 	if params["report-diagnostics"]
-		open(joinpath(params["diagnostics_path"], format("{1}_{2}_{3}_1.txt", LMlib.gettext("model"), run_number, LMlib.gettext("calibration"))), "w") do f
+		open(joinpath(params["diagnostics_path"], format("{1}_{2}_{3}_1.txt", AMESlib.gettext("model"), run_number, AMESlib.gettext("calibration"))), "w") do f
 			print(f, mdl)
 		end
 	end
@@ -437,23 +437,23 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		@info optim_output
 	end
     status = primal_status(mdl)
-    @info format(LMlib.gettext("Calibrating for {1}: {2}"), years[1], status)
+    @info format(AMESlib.gettext("Calibrating for {1}: {2}"), years[1], status)
 
 	# Sector variables
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("capacity_utilization_",run_number,".csv")), value.(u), LMlib.gettext("capacity utilization"), params["included_sector_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("sector_output_",run_number,".csv")), value.(u) .* z, LMlib.gettext("sector output"), params["included_sector_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("wage_share_",run_number,".csv")), ω, LMlib.gettext("wage share"), params["included_sector_codes"])
-	LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("capital_output_ratio_",run_number,".csv")), capital_output_ratio, LMlib.gettext("capital-output ratio"), params["included_sector_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("capacity_utilization_",run_number,".csv")), value.(u), AMESlib.gettext("capacity utilization"), params["included_sector_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("sector_output_",run_number,".csv")), value.(u) .* z, AMESlib.gettext("sector output"), params["included_sector_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("wage_share_",run_number,".csv")), ω, AMESlib.gettext("wage share"), params["included_sector_codes"])
+	AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("capital_output_ratio_",run_number,".csv")), capital_output_ratio, AMESlib.gettext("capital-output ratio"), params["included_sector_codes"])
     
 	# Product variables
-	LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("exports_",run_number,".csv")), value.(X), LMlib.gettext("exports"), params["included_product_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("final_demand_",run_number,".csv")), value.(F), LMlib.gettext("final demand"), params["included_product_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("imports_",run_number,".csv")), value.(M), LMlib.gettext("imports"), params["included_product_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("domestic_production_",run_number,".csv")), value.(qs), LMlib.gettext("domestic production"), params["included_product_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("tot_intermediate_supply_non-energy_sectors_",run_number,".csv")), value.(qd), LMlib.gettext("intermediate supply from non-energy sectors"), params["included_product_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("basic_prices_",run_number,".csv")), param_pb, LMlib.gettext("basic prices"), params["included_product_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("margins_neg_",run_number,".csv")), value.(margins_neg), LMlib.gettext("negative margins"), params["included_product_codes"])
-    LMlib.write_vector_to_csv(joinpath(params["calibration_path"], string("margins_pos_",run_number,".csv")), value.(margins_pos), LMlib.gettext("positive margins"), params["included_product_codes"])
+	AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("exports_",run_number,".csv")), value.(X), AMESlib.gettext("exports"), params["included_product_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("final_demand_",run_number,".csv")), value.(F), AMESlib.gettext("final demand"), params["included_product_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("imports_",run_number,".csv")), value.(M), AMESlib.gettext("imports"), params["included_product_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("domestic_production_",run_number,".csv")), value.(qs), AMESlib.gettext("domestic production"), params["included_product_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("tot_intermediate_supply_non-energy_sectors_",run_number,".csv")), value.(qd), AMESlib.gettext("intermediate supply from non-energy sectors"), params["included_product_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("basic_prices_",run_number,".csv")), param_pb, AMESlib.gettext("basic prices"), params["included_product_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("margins_neg_",run_number,".csv")), value.(margins_neg), AMESlib.gettext("negative margins"), params["included_product_codes"])
+    AMESlib.write_vector_to_csv(joinpath(params["calibration_path"], string("margins_pos_",run_number,".csv")), value.(margins_pos), AMESlib.gettext("positive margins"), params["included_product_codes"])
 
     # First run is calibration -- now set Xnorm and Fnorm based on solution and run again
     Xnorm = max.(Xnorm, value.(X))
@@ -465,7 +465,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		set_normalized_coefficient(eq_F[i], fshare[i], -param_Fnorm[i])
 	end
 	if params["report-diagnostics"]
-		open(joinpath(params["diagnostics_path"], format("{1}_{2}_{3}_2.txt", LMlib.gettext("model"), run_number, LMlib.gettext("calibration"))), "w") do f
+		open(joinpath(params["diagnostics_path"], format("{1}_{2}_{3}_2.txt", AMESlib.gettext("model"), run_number, AMESlib.gettext("calibration"))), "w") do f
 			print(f, mdl)
 		end
 	end
@@ -520,14 +520,14 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 	#--------------------------------
 	# Initialize array of indices to pass to LEAP
 	#--------------------------------
-	labels = [LMlib.gettext("Year")]
-	if LMlib.haskeyvalue(params, "GDP-branch")
+	labels = [AMESlib.gettext("Year")]
+	if AMESlib.haskeyvalue(params, "GDP-branch")
 		labels = vcat(labels, params["GDP-branch"]["name"])
 	end
-	if LMlib.haskeyvalue(params, "Employment-branch")
+	if AMESlib.haskeyvalue(params, "Employment-branch")
 		labels = vcat(labels, params["Employment-branch"]["name"])
 	end
-	if LMlib.haskeyvalue(params, "LEAP_sector_names")
+	if AMESlib.haskeyvalue(params, "LEAP_sector_names")
 		labels = vcat(labels, params["LEAP_sector_names"])
 	end
 	indices = Array{Float64}(undef, length(years), length(labels))
@@ -539,39 +539,39 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 	sector_names = params["included_sector_names"]
 	product_names = params["included_product_names"]
 	# Quote the sector and product names (for putting into CSV files)
-	LMlib.stringvec_to_quotedstringvec!(sector_names)
-	LMlib.stringvec_to_quotedstringvec!(product_names)
+	AMESlib.stringvec_to_quotedstringvec!(sector_names)
+	AMESlib.stringvec_to_quotedstringvec!(product_names)
 
 	# Create files for sector variables
-	LMlib.write_header_to_csv(params, sector_names, "sector_output", run_number)
-	LMlib.write_header_to_csv(params, sector_names, "potential_sector_output", run_number)
-	LMlib.write_header_to_csv(params, sector_names, "capacity_utilization", run_number)
-	LMlib.write_header_to_csv(params, sector_names, "real_value_added", run_number)
-	LMlib.write_header_to_csv(params, sector_names, "profit_rate", run_number)
-	LMlib.write_header_to_csv(params, sector_names, "autonomous_investment_rate", run_number)
-	LMlib.write_header_to_csv(params, sector_names, "domestic_insertion", run_number)
+	AMESlib.write_header_to_csv(params, sector_names, "sector_output", run_number)
+	AMESlib.write_header_to_csv(params, sector_names, "potential_sector_output", run_number)
+	AMESlib.write_header_to_csv(params, sector_names, "capacity_utilization", run_number)
+	AMESlib.write_header_to_csv(params, sector_names, "real_value_added", run_number)
+	AMESlib.write_header_to_csv(params, sector_names, "profit_rate", run_number)
+	AMESlib.write_header_to_csv(params, sector_names, "autonomous_investment_rate", run_number)
+	AMESlib.write_header_to_csv(params, sector_names, "domestic_insertion", run_number)
 	if params["labor-prod-fcn"]["use_sector_params"]
-		LMlib.write_header_to_csv(params, sector_names, "sector_employment", run_number)
+		AMESlib.write_header_to_csv(params, sector_names, "sector_employment", run_number)
 	end
 	# Create files for product variables
-	LMlib.write_header_to_csv(params, product_names, "final_demand", run_number)
-	LMlib.write_header_to_csv(params, product_names, "imports", run_number)
-	LMlib.write_header_to_csv(params, product_names, "exports", run_number)
-	LMlib.write_header_to_csv(params, product_names, "basic_prices", run_number)
-	LMlib.write_header_to_csv(params, product_names, "domestic_prices", run_number)
+	AMESlib.write_header_to_csv(params, product_names, "final_demand", run_number)
+	AMESlib.write_header_to_csv(params, product_names, "imports", run_number)
+	AMESlib.write_header_to_csv(params, product_names, "exports", run_number)
+	AMESlib.write_header_to_csv(params, product_names, "basic_prices", run_number)
+	AMESlib.write_header_to_csv(params, product_names, "domestic_prices", run_number)
 	# Create a file to hold scalar variables
-	scalar_var_list = [LMlib.gettext("GDP gr"), LMlib.gettext("net exports to GDP ratio"), LMlib.gettext("net exports"), LMlib.gettext("real GDP"),
-					   LMlib.gettext("GDP deflator"), LMlib.gettext("labor productivity gr"), LMlib.gettext("labor force gr"), LMlib.gettext("real investment"),
-					   LMlib.gettext("central bank rate"), LMlib.gettext("terms of trade index"), LMlib.gettext("real xr index"), LMlib.gettext("nominal xr index")]
-	LMlib.stringvec_to_quotedstringvec!(scalar_var_list)
-	LMlib.write_header_to_csv(params, scalar_var_list, "collected_variables", run_number)
+	scalar_var_list = [AMESlib.gettext("GDP gr"), AMESlib.gettext("net exports to GDP ratio"), AMESlib.gettext("net exports"), AMESlib.gettext("real GDP"),
+					   AMESlib.gettext("GDP deflator"), AMESlib.gettext("labor productivity gr"), AMESlib.gettext("labor force gr"), AMESlib.gettext("real investment"),
+					   AMESlib.gettext("central bank rate"), AMESlib.gettext("terms of trade index"), AMESlib.gettext("real xr index"), AMESlib.gettext("nominal xr index")]
+	AMESlib.stringvec_to_quotedstringvec!(scalar_var_list)
+	AMESlib.write_header_to_csv(params, scalar_var_list, "collected_variables", run_number)
 
 	#############################################################################
 	#
     # Run simulation
 	#
 	#############################################################################
-    @info format(LMlib.gettext("Running from {1} to {2}:"), years[2], last(years))
+    @info format(AMESlib.gettext("Running from {1} to {2}:"), years[2], last(years))
 
     previous_failed = false
     for t in eachindex(years)
@@ -615,7 +615,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
             GDP_gr = prev_GDP_gr
 			GDP = prev_GDP * (1 + GDP_gr)
         else
-			πd = (param_pd - pd_prev) ./ (pd_prev .+ LMlib.ϵ) # If not produced, pd_prev = 0
+			πd = (param_pd - pd_prev) ./ (pd_prev .+ AMESlib.ϵ) # If not produced, pd_prev = 0
 	        πb = (param_pb - pb_prev) ./ pb_prev
 	        πw = (prices.pw - pw_prev) ./ pw_prev # exog.πw_base is a single value, applied to all products; this is by product
             πg = sum(g_share .* πb)
@@ -680,7 +680,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 											 techchange.coefficients)
 			sut.D = sut.D .* exp.(D_hat) # This ensures that sut.D will not become negative
 			if params["report-diagnostics"]
-				LMlib.write_matrix_to_csv(joinpath(params["diagnostics_path"],"demand_coefficients_" * string(years[t]) * ".csv"), sut.D, params["included_product_codes"], params["included_sector_codes"])
+				AMESlib.write_matrix_to_csv(joinpath(params["diagnostics_path"],"demand_coefficients_" * string(years[t]) * ".csv"), sut.D, params["included_product_codes"], params["included_sector_codes"])
 			end
 		end
 
@@ -689,9 +689,9 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		#--------------------------------
 		if !previous_failed
 			# First, update the Vnorm matrix
-			sut.Vnorm = Diagonal(1 ./ (g .+ LMlib.ϵ)) * sut.S * Diagonal(value.(qs))
+			sut.Vnorm = Diagonal(1 ./ (g .+ AMESlib.ϵ)) * sut.S * Diagonal(value.(qs))
 			# Calculate export-weighted price
-			export_share = value.(X) ./ (value.(qs) .+ LMlib.ϵ)
+			export_share = value.(X) ./ (value.(qs) .+ AMESlib.ϵ)
 			px = exog.xr[t] * export_share .* prices.pw + (1 .- export_share) .* prices.pd
 			# First calculate profits per output at full capacity utilization, then adjust
 			profit_per_output = sut.Vnorm * px - (prices.Pg .* (ω + sut.energy_share) +  transpose(sut.D) * prices.pb)
@@ -746,14 +746,14 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 			pot_prod = sum(exog.pot_output[t,i] * sut.Vnorm[i,:] for i in pot_output_ndxs)
 			# -- extent of externally specified output
 			# 2) Calculate the fraction of product output that is exogenously specified via sector
-			pot_prod_spec_factor = sum(sut.Vnorm[i,:] * z[i] for i in pot_output_ndxs) ./ (sut.Vnorm' * z .+ LMlib.ϵ)
+			pot_prod_spec_factor = sum(sut.Vnorm[i,:] * z[i] for i in pot_output_ndxs) ./ (sut.Vnorm' * z .+ AMESlib.ϵ)
 		else
 			pot_prod = zeros(np)
 			pot_prod_spec_factor = zeros(np)
 		end
 		# -- scale factor for exports and imports (the growth factor for imports is the reciprocal of the factor for exports)
-		Xnorm_scale_factor = (1 .- pot_prod_spec_factor) .+  pot_prod_spec_factor .* pot_prod ./ (prev_pot_prod .+ LMlib.ϵ)
-		M_scale_factor = (1 .- pot_prod_spec_factor) .+  pot_prod_spec_factor .* prev_pot_prod ./ (pot_prod .+ LMlib.ϵ)
+		Xnorm_scale_factor = (1 .- pot_prod_spec_factor) .+  pot_prod_spec_factor .* pot_prod ./ (prev_pot_prod .+ AMESlib.ϵ)
+		M_scale_factor = (1 .- pot_prod_spec_factor) .+  pot_prod_spec_factor .* prev_pot_prod ./ (pot_prod .+ AMESlib.ϵ)
 		prev_pot_prod = pot_prod
 		# -- income factor
 		smoothed_world_gr += growth_adj * (exog.world_grs[t] - smoothed_world_gr)
@@ -770,18 +770,18 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		W_curr = sum(W)
         W = ((1 .+ w_gr)./(1 .+ λ_gr)) .* W .* (1 .+ γ)
         wage_ratio = (1/(1 + πF)) * sum(W)/W_curr
-        Fnorm = Fnorm .* max.(LMlib.ϵ,wage_ratio).^exog.wage_elast_demand[t]
+        Fnorm = Fnorm .* max.(AMESlib.ϵ,wage_ratio).^exog.wage_elast_demand[t]
 
 		#--------------------------------
 		# Calculate indices to pass to LEAP
 		#--------------------------------
         indices[t,1] = years[t]
 		curr_index = 1
-		if LMlib.haskeyvalue(params, "GDP-branch")
+		if AMESlib.haskeyvalue(params, "GDP-branch")
 			curr_index += 1
 			indices[t,curr_index] = GDP
 		end
-		if LMlib.haskeyvalue(params, "Employment-branch")
+		if AMESlib.haskeyvalue(params, "Employment-branch")
 			curr_index += 1
 			indices[t,curr_index] = lab_force_index
 		end
@@ -843,7 +843,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		end	
 
 		if !previous_failed
-			sut.m_frac = (value.(M) + LMlib.ϵ * sut.m_frac) ./ (value.(qd) + value.(F) + value.(I_supply) .+ LMlib.ϵ)
+			sut.m_frac = (value.(M) + AMESlib.ϵ * sut.m_frac) ./ (value.(qd) + value.(F) + value.(I_supply) .+ AMESlib.ϵ)
 		end
 		prices.pd = calc_dom_prices(t, np, ns, ω, prices, sut, exog)
 		prices.pb = exog.xr[t] * sut.m_frac .* prices.pw + (1 .- sut.m_frac) .* prices.pd
@@ -854,26 +854,26 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		dom_insert = sum(inv(LinearAlgebra.I - Adom), dims = 1) ./ sum(inv(LinearAlgebra.I - A), dims = 1)
 
 		# Sector variables
-		LMlib.append_row_to_csv(params, g, "sector_output", run_number, years[t])
-		LMlib.append_row_to_csv(params, z, "potential_sector_output", run_number, years[t])
-		LMlib.append_row_to_csv(params, u_report, "capacity_utilization", run_number, years[t])
-		LMlib.append_row_to_csv(params, value_added_at_prev_prices/prev_GDP_deflator, "real_value_added", run_number, years[t])
-		LMlib.append_row_to_csv(params, profit_rate, "profit_rate", run_number, years[t])
-		LMlib.append_row_to_csv(params, γ_0, "autonomous_investment_rate", run_number, years[t])
-		LMlib.append_row_to_csv(params, dom_insert, "domestic_insertion", run_number, years[t])
+		AMESlib.append_row_to_csv(params, g, "sector_output", run_number, years[t])
+		AMESlib.append_row_to_csv(params, z, "potential_sector_output", run_number, years[t])
+		AMESlib.append_row_to_csv(params, u_report, "capacity_utilization", run_number, years[t])
+		AMESlib.append_row_to_csv(params, value_added_at_prev_prices/prev_GDP_deflator, "real_value_added", run_number, years[t])
+		AMESlib.append_row_to_csv(params, profit_rate, "profit_rate", run_number, years[t])
+		AMESlib.append_row_to_csv(params, γ_0, "autonomous_investment_rate", run_number, years[t])
+		AMESlib.append_row_to_csv(params, dom_insert, "domestic_insertion", run_number, years[t])
 		if params["labor-prod-fcn"]["use_sector_params"]
-			LMlib.append_row_to_csv(params, ℓ, "sector_employment", run_number, years[t])
+			AMESlib.append_row_to_csv(params, ℓ, "sector_employment", run_number, years[t])
 		end
 		# Product variables
-		LMlib.append_row_to_csv(params, F_report, "final_demand", run_number, years[t])
-		LMlib.append_row_to_csv(params, M_report, "imports", run_number, years[t])
-		LMlib.append_row_to_csv(params, X_report, "exports", run_number, years[t])
-		LMlib.append_row_to_csv(params, param_pb, "basic_prices", run_number, years[t])
-		LMlib.append_row_to_csv(params, param_pd, "domestic_prices", run_number, years[t])
+		AMESlib.append_row_to_csv(params, F_report, "final_demand", run_number, years[t])
+		AMESlib.append_row_to_csv(params, M_report, "imports", run_number, years[t])
+		AMESlib.append_row_to_csv(params, X_report, "exports", run_number, years[t])
+		AMESlib.append_row_to_csv(params, param_pb, "basic_prices", run_number, years[t])
+		AMESlib.append_row_to_csv(params, param_pd, "domestic_prices", run_number, years[t])
 		# Scalar variables
 		scalar_var_vals = [GDP_gr, netexp_to_GDP_ratio, netexp_surplus, GDP, GDP_deflator, λ_gr_scalar, L_gr,
 							param_I_tot, i_bank, prices.Px/prices.Pm, prices.RER, prices.XR]
-		LMlib.append_row_to_csv(params, scalar_var_vals, "collected_variables", run_number, years[t])
+		AMESlib.append_row_to_csv(params, scalar_var_vals, "collected_variables", run_number, years[t])
 
 		if t == length(years)
 			break
@@ -929,7 +929,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		fix(I_tot, param_I_tot)
 
 		if params["report-diagnostics"]
-			open(joinpath(params["diagnostics_path"], format("{1}_{2}_{3}.txt", LMlib.gettext("model"), run_number, years[t])), "w") do f
+			open(joinpath(params["diagnostics_path"], format("{1}_{2}_{3}.txt", AMESlib.gettext("model"), run_number, years[t])), "w") do f
 				print(f, mdl)
 			end
 		end
@@ -941,14 +941,14 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 		end
         status = primal_status(mdl)
 		# Add one to year to report the year currently being calculated
-        @info format(LMlib.gettext("Simulating for {1}: {2}"), years[t + 1], status)
+        @info format(AMESlib.gettext("Simulating for {1}: {2}"), years[t + 1], status)
         previous_failed = status != MOI.FEASIBLE_POINT
         if previous_failed
-			nndx_extra = 1 + (LMlib.haskeyvalue(params, "GDP-branch") ? 1 : 0) + (LMlib.haskeyvalue(params, "Employment-branch") ? 1 : 0)
+			nndx_extra = 1 + (AMESlib.haskeyvalue(params, "GDP-branch") ? 1 : 0) + (AMESlib.haskeyvalue(params, "Employment-branch") ? 1 : 0)
 			finndx = nndx_extra + length(LEAP_indices) # Adds columns for year and, if present, GDP, employment
             indices[t,nndx_extra:finndx] = fill(NaN, (finndx - nndx_extra) + 1)
 			if !continue_if_error
-				throw(ErrorException(format(LMlib.gettext("Linear goal program failed to solve: {1}"), status)))
+				throw(ErrorException(format(AMESlib.gettext("Linear goal program failed to solve: {1}"), status)))
 			end
         end
     end
@@ -995,7 +995,7 @@ function compare_results(params::Dict, run_number::Integer)
     return max_diff
 end # compare_results
 
-"Iteratively run the Macro model and LEAP until convergence. This is the primary entry point for LEAP-Macro."
+"Iteratively run the AMES model and LEAP until convergence. This is the primary entry point for AMES."
 function leapmacro(param_file::AbstractString,
 				   logfile::IOStream,
 				   include_energy_sectors::Bool = false,
@@ -1022,15 +1022,15 @@ function leapmacro(param_file::AbstractString,
 		end
         ## checks that user has LEAP installed
         if ismissing(LEAPlib.connect_to_leap())
-            @error LMlib.gettext("Cannot connect to LEAP. Please check that LEAP is installed, or set 'run_leap: false' in the configuration file.")
+            @error AMESlib.gettext("Cannot connect to LEAP. Please check that LEAP is installed, or set 'run_leap: false' in the configuration file.")
             return
         end
 		if load_leap_first
 			## Obtain LEAP results
 			if !isnothing(get_results_from_leap_version)
-				status_string = format(LMlib.gettext("Obtaining LEAP results from version '{1}'..."), LEAPlib.get_version_info(get_results_from_leap_version))
+				status_string = format(AMESlib.gettext("Obtaining LEAP results from version '{1}'..."), LEAPlib.get_version_info(get_results_from_leap_version))
 			else
-				status_string = LMlib.gettext("Obtaining LEAP results...")
+				status_string = AMESlib.gettext("Obtaining LEAP results...")
 			end
 			#------------status
 			@info status_string
@@ -1044,29 +1044,29 @@ function leapmacro(param_file::AbstractString,
     max_tolerance = params["model"]["max_tolerance"]
 
 	if include_energy_sectors
-		println(format(LMlib.gettext("With configuration file '{1}' (including energy sectors):"), param_file))
+		println(format(AMESlib.gettext("With configuration file '{1}' (including energy sectors):"), param_file))
 	else
-		println(format(LMlib.gettext("With configuration file '{1}':"), param_file))
+		println(format(AMESlib.gettext("With configuration file '{1}':"), param_file))
 	end
     for run_number = run_number_start:max_runs
-        ## Run Macro model
+        ## Run AMES model
         #------------status
-		run_string = format(LMlib.gettext("Macro model run ({1})..."), run_number)
+		run_string = format(AMESlib.gettext("AMES model run ({1})..."), run_number)
 		print(run_string)
         @info run_string
         indices = macro_main(params, leapvals, run_number, continue_if_error)
 		#------------status
-		println(LMlib.gettext("completed"))
+		println(AMESlib.gettext("completed"))
         #------------status
 
         ## Compare run results
         if run_number >= run_number_start + 1
             tolerance = compare_results(params, run_number)
             if tolerance <= max_tolerance
-                @info format(LMlib.gettext("Convergence in run number {1} at {2:.2f}% ≤ {3:.2f}% target..."), run_number, tolerance, max_tolerance)
+                @info format(AMESlib.gettext("Convergence in run number {1} at {2:.2f}% ≤ {3:.2f}% target..."), run_number, tolerance, max_tolerance)
                 return
             else
-                @info format(LMlib.gettext("Results did not converge: {1:.2f}% > {2:.2f}% target..."), tolerance, max_tolerance)
+                @info format(AMESlib.gettext("Results did not converge: {1:.2f}% > {2:.2f}% target..."), tolerance, max_tolerance)
                 if run_number == max_runs
                     return
                 end
@@ -1077,34 +1077,34 @@ function leapmacro(param_file::AbstractString,
         if run_leap
 			if params["model"]["hide_leap"]
 				#------------status
-				@info LMlib.gettext("Hiding LEAP to improve performance...")
+				@info AMESlib.gettext("Hiding LEAP to improve performance...")
 				#------------status
 				LEAPlib.hide_leap(true)
 			end
 
             #------------status
-            @info LMlib.gettext("Sending Macro output to LEAP...")
+            @info AMESlib.gettext("Sending AMES output to LEAP...")
             #------------status
             LEAPlib.send_results_to_leap(params, indices)
             ## Run LEAP model
 			if !only_push_leap_results
 				try
 					#------------status
-					@info LMlib.gettext("Running LEAP model...")
+					@info AMESlib.gettext("Running LEAP model...")
 					flush(logfile)
 					#------------status
 					LEAPlib.calculate_leap(params["LEAP-info"]["result_scenario"])
 
 					## Obtain LEAP results
 					#------------status
-					@info LMlib.gettext("Obtaining LEAP results...")
+					@info AMESlib.gettext("Obtaining LEAP results...")
 					flush(logfile)
 					#------------status
 					leapvals = LEAPlib.get_results_from_leap(params, run_number + 1)
 				finally
 					if params["model"]["hide_leap"]
 						#------------status
-						@info LMlib.gettext("Restoring LEAP...")
+						@info AMESlib.gettext("Restoring LEAP...")
 						#------------status
 						LEAPlib.hide_leap(false)
 					end
@@ -1117,4 +1117,4 @@ function leapmacro(param_file::AbstractString,
 
 end # leapmacro
 
-end # Macro
+end # AMES

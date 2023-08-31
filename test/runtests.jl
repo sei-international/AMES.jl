@@ -1,36 +1,36 @@
-using LEAPMacro
+using AMES
 using Test
 
 curr_working_dir = pwd()
 cd(@__DIR__)
 
-@testset "LEAPMacro.run" begin
-	@test LEAPMacro.run("LEAPMacro_params.yml",
+@testset "AMES.run" begin
+	@test AMES.run("AMES_params.yml",
 						dump_err_stack = true,
 						continue_if_error = false,
 						load_leap_first = false,
 						include_energy_sectors = true) == 0
-	@test LEAPMacro.run("LEAPMacro_params.yml",
+	@test AMES.run("AMES_params.yml",
 						dump_err_stack = true,
 						continue_if_error = false,
 						load_leap_first = false,
 						include_energy_sectors = false) == 0
-	@test LEAPMacro.run("LEAPMacro_params_all_options.yml",
+	@test AMES.run("AMES_params_all_options.yml",
 						dump_err_stack = true,
 						continue_if_error = false,
 						load_leap_first = false,
 						include_energy_sectors = true) == 0
-	@test LEAPMacro.run("LEAPMacro_params_all_options.yml",
+	@test AMES.run("AMES_params_all_options.yml",
 						dump_err_stack = true,
 						continue_if_error = false,
 						load_leap_first = false,
 						include_energy_sectors = false) == 0
-	@test LEAPMacro.run("Macro_minimal_params.yml",
+	@test AMES.run("AMES_minimal_params.yml",
 						dump_err_stack = true,
 						continue_if_error = false,
 						load_leap_first = false,
 						include_energy_sectors = true) == 0
-	# @test LEAPMacro.run("LEAPMacro_params.yml",
+	# @test AMES.run("AMES_params.yml",
 	# 					dump_err_stack = true,
 	# 					continue_if_error = false,
 	# 					load_leap_first = true,

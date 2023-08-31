@@ -1,4 +1,4 @@
-using Documenter, LEAPMacro
+using Documenter, AMES
 
 """
     Documenter.Writers.HTMLWriter.analytics_script(line::String)
@@ -22,7 +22,7 @@ function Documenter.Writers.HTMLWriter.analytics_script(tracking_id::AbstractStr
 end  # Documenter.Writers.HTMLWriter.analytics_script(tracking_id::AbstractString)
 
 makedocs(
-    sitename = "LEAP-Macro",
+    sitename = "AMES",
     format = Documenter.HTML(analytics="G-VFCCCS3YR4"),
     pages = [
         "Introduction" => "index.md"
@@ -32,14 +32,14 @@ makedocs(
             "LEAP exercise" => "leap-exercise.md"
         ]
         "Model overview" => [
-            "LEAP-Macro link" => "leap-macro-link.md"
+            "LEAP-AMES link" => "leap-macro-link.md"
             "Theoretical background" => "theoretical-background.md"
         ]
-        "Using LEAP-Macro" => [
+        "Using AMES" => [
             "Configuration file" => "config.md"
             "Supply-use table" => "sut.md"
             "External parameter files" => "params.md"
-            "Running the Macro model" => "running-macro.md"
+            "Running the AMES model" => "running-macro.md"
             "Output files" => "model-outputs.md"
             "Preparing a model" => "prep-model.md"
             "Calibrating with PEST" => "pest-calib.md"
@@ -55,5 +55,5 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/sei-international/LEAPMacro.jl.git"
+    repo = "github.com/sei-international/AMES.jl.git"
 )

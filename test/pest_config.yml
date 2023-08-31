@@ -49,13 +49,13 @@ pest:
             2019: [0.027, 1]
             2020: [-0.017, 0.1]
 
-LEAP-Macro:
+AMES:
   output_folder: Calibration
   julia:
     # Note that script must accept thse flags:
     # usage: pest_run_leapmacro.jl [-c] [-s SLEEP] [-d DATA_FILES [DATA_FILES...]] [-v] [-e] [-r] [-h] [config_file]
     # positional arguments:
-    #   config_file                                 name of config file (default: "LEAPMacro_params.yml")
+    #   config_file                                 name of config file (default: "AMES_params.yml")
     # optional arguments:
     #   -c, --calibrate                             flag to do a calibration run
     #   -s, --sleep SLEEP                           delay between iterations by this many seconds (default: 0.1)
@@ -64,7 +64,7 @@ LEAP-Macro:
     #   -e, --include-energy-sectors                include energy sectors in the model simulation
     #   -r, --resume-if-error                       try to continue if the linear goal program returns an error
     #   -h, --help                                  show the help message and exit
-    command: julia --sysimage=LEAPMacro-sysimage.so
+    command: julia --sysimage=AMES-sysimage.so
     script: pest_run_leapmacro.jl
     resume_if_error: false
     verbose_errors: false

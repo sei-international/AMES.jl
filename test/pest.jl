@@ -5,9 +5,9 @@ function parse_commandline()
     argp = ArgParseSettings(autofix_names = true)
     @add_arg_table! argp begin
         "config-file"
-            help = "name of LEAP-Macro config file"
+            help = "name of AMES config file"
             arg_type = AbstractString
-            default = "LEAPMacro_params.yml"
+            default = "AMES_params.yml"
         "--pest-config-file", "-p"
             help = "name of PEST config file"
             arg_type = AbstractString
@@ -15,7 +15,7 @@ function parse_commandline()
         "--control-file", "-c"
             help = "name to assign the control file"
             arg_type = AbstractString
-            default = "LEAPMacro_control.pst"
+            default = "AMES_control.pst"
 		"--RLAMBDA1"
 			help = "PEST control file parameter RLAMBDA1"
 			arg_type = Float64
@@ -142,7 +142,7 @@ function write_template_file(pest_opts, cfg_fname)
     tpl_fname = cfg2basename(cfg_fname) * ".tpl"
 
     pest_params = pest_opts["pest"]["parameters"]
-    params = pest_opts["LEAP-Macro"]["config"]
+    params = pest_opts["AMES"]["config"]
     # Insert a new entry to rewrite years
     params["years"] = Dict("start" => pest_opts["pest"]["calibration"]["years"][1],
                            "end" => pest_opts["pest"]["calibration"]["years"][2])
@@ -175,7 +175,7 @@ function write_template_file(pest_opts, cfg_fname)
             if occursin(re_mainkey, line)
                 curr_mainkey = match(re_mainkey, line).match
                 if curr_mainkey == "output_folder"
-                    write(tpl_hdnl, "output_folder: " * pest_opts["LEAP-Macro"]["output_folder"] * "\r\n")
+                    write(tpl_hdnl, "output_folder: " * pest_opts["AMES"]["output_folder"] * "\r\n")
                     continue
                 elseif haskeyvalue(params, curr_mainkey)
                     sub_params = [params[curr_mainkey]]
@@ -410,7 +410,7 @@ function write_control_file(pest_opts, ctrl_fname, cfg_fname, args)
     # Line 1
     writehdr(ctrl_hdnl, "model command line")
     # Line 2
-    julia_settings = pest_opts["LEAP-Macro"]["julia"]
+    julia_settings = pest_opts["AMES"]["julia"]
     cmdline = [julia_settings["command"], julia_settings["script"], yml_fname, "-c", "-e"]
     if haskeyvalue(julia_settings, "resume_if_error") && julia_settings["resume_if_error"] push!(cmdline, "-r") end
     if haskeyvalue(julia_settings, "verbose_errors") && julia_settings["verbose_errors"] push!(cmdline, "-v") end

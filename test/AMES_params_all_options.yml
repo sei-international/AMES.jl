@@ -1,7 +1,7 @@
 #---------------------------------------------------------------------------
 # Folder inside the "outputs" folder to store calibration, results, and diagnostics
 #---------------------------------------------------------------------------
-output_folder: Baseline
+output_folder: Baseline_all_options
 
 #---------------------------------------------------------------------------
 # Start and end years for the simulation
@@ -49,10 +49,10 @@ model:
 #   * Include only those products where values are specified -- for others the real price will be held constant
 #   * Prices for non-tradeables will be ignored; they are calculated internally by Macro
 exog-files:
-    # investment: exog_invest.csv # Time series of exogenous investment demand, additional to that simulated by the model
-    # pot_output: exog_pot_output.csv # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
-    # max_utilization: exog_max_util.csv # Maximum capacity utilization: sectors label columns; years label rows (must lie between 0 and 1)
-    # real_price: exog_price.csv # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
+    investment: exog_invest.csv # Time series of exogenous investment demand, additional to that simulated by the model
+    pot_output: exog_pot_output.csv # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
+    max_utilization: exog_max_util.csv # Maximum capacity utilization: sectors label columns; years label rows (must lie between 0 and 1)
+    real_price: exog_price.csv # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
 
 #---------------------------------------------------------------------------
 # Adjustment parameters for initializing variables
@@ -113,7 +113,7 @@ investment-fcn:
     # Change in induced investment with a change in the central bank lending rate
     intrate_sens: 0.20
     # Change in induced investment with a change in the current account-to-GDP ratio
-    net_export: 0.00
+    net_export: 0.05
     # Rate of adjustment of the autonomous investment rate towards the actual investment rate
     growth_adj: 0.10
 
@@ -140,9 +140,10 @@ wage-fcn:
 #---------------------------------------------------------------------------
 # Parameter for rate of change in technical parameters
 #---------------------------------------------------------------------------
+# Uncomment rate_constant line below to endogenize changes in the scaled Use matrix
 tech-param-change:
     # Flag to say whether to calculate changing technical parameters
-    calculate: false
+    calculate: true
     # Flag for whether to use sector parameters
     use_sector_params_if_available: true
     # Rate constant
@@ -184,12 +185,12 @@ objective-fcn:
 #---------------------------------------------------------------------------
 # NOTE: Both supply and use tables must have sectors labeling columns and products labeling rows
 excluded_sectors:
-    energy: [s_coal, s_petr, s_util]
+    energy: [s_petr, s_util]
     territorial_adjustment: []
     others: []
 
 excluded_products:
-    energy: [p_coal, p_petr, p_util]
+    energy: [p_petr, p_util]
     territorial_adjustment: []
     others: []
     
@@ -217,37 +218,25 @@ SUT_ranges:
     wages: J37:W38
 
 #---------------------------------------------------------------------------
-# Parameters for running LEAP with the Macro model (LEAP-Macro)
+# Parameters for running LEAP with the Macro model (AMES)
 #---------------------------------------------------------------------------
 # Core information for the LEAP application (optional)
 LEAP-info:
-    # The last historical year (equal to LEAP's First Scenario Year - 1): if missing, it is set equal to the start year
+    # The last historical year (equal to LEAP's First Scenario Year - 1): if missing, it is set equal to the the start year
     last_historical_year: 2010
     # This can be, e.g., a baseline scenario (alternatively, can specify input_scenario and result_scenario separately)
     scenario: Baseline
     # The region (if any -- can omit, or enter a "~", meaning no value)
     region: ~
-
+    
 LEAP-investment:
     # Currency units for investment costs
     inv_costs_unit: U.S. Dollar
     # Scaling factor for investment costs (values are divided by this number, e.g., for thousands use 1000 or 1.0e+3)
     inv_costs_scale: 1.0e+6
-    # Say whether to apply the nominal exchange rate to investment costs (e.g., if investment costs are in USD, but the SUT is in domestic currency)
-    inv_costs_apply_xr: false
     # Exclude any investment branches that contain any of the text in the list (case-insensitive)
     excluded_branches: []
-    distribute_costs_over:
-        default: 5 # years: This will be rounded to an integer
-        by_branch:
-            - {
-                path: Transformation\Electricity Generation\Processes\Existing Hydro,
-                value: 10 # years: This will be rounded to an integer
-            }
-            - {
-                path: Transformation\Electricity Generation\Processes\New Oil Combustion Turbine,
-                value: [10, 20, 20, 20, 10, 10, 5, 5] # percent by years: This will be re-scaled so it sums to 1.0
-            }
+
 
 # Association between Macro's GDP result and LEAP (optional)
 GDP-branch:
@@ -262,11 +251,6 @@ Employment-branch:
     variable: Activity Level
 
 # Association between Macro sectors and LEAP sectors (optional)
-LEAP-drivers:
-    options:
-        PROD: production
-        VA: value added
-    default: PROD
 LEAP-sectors:
  - {
     name: Iron and Steel,
@@ -301,7 +285,6 @@ LEAP-sectors:
  - {
     name: Transport,
     codes: [s_transp],
-    driver: VA,
     branches: [
         {
          branch: Demand\Transport\Freight,
@@ -312,7 +295,6 @@ LEAP-sectors:
  - {
     name: Commercial,
     codes: [s_comm, s_othsrv],
-    driver: VA,
     branches: [
         {
          branch: Demand\Commercial,
@@ -321,6 +303,21 @@ LEAP-sectors:
     ]
    }
 
-LEAP-potential-output: []
+LEAP-potential-output:
+ - {
+    branches: [
+        {
+         branch: Resources\Primary\Coal Bituminous,
+         variable: Indigenous Production
+        }
+    ],
+    code: s_coal
+   }
 
-LEAP-prices: []
+LEAP-prices:
+ - {
+    branch: Resources\Primary\Coal Bituminous,
+    variable: Indigenous Cost,
+    codes: [p_coal]
+   }
+

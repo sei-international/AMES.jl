@@ -1,7 +1,7 @@
 cls
 
 macrodir = LEAP.ActiveArea.Directory & "Macro\"
-macrofile = "LEAP-Macro-run.jl"
+macrofile = "AMES-run.jl"
 
 function GetJuliaPath()
 	Dim shell

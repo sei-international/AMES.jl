@@ -1,11 +1,11 @@
 ```@meta
-CurrentModule = LEAPMacro
+CurrentModule = AMES
 ```
 
 # [Linear goal program](@id lgp)
 For the list of variables, their symbols, and their definitions, see the [Variables](@ref variables) page.
 
-The Macro model solves, in each year, a linear goal program (LGP) that seeks the following, potentially competing, objectives:
+The AMES model solves, in each year, a linear goal program (LGP) that seeks the following, potentially competing, objectives:
 1. Full utilization
 2. Meeting or exceeding a "normal" level of final demand
 3. Meeting or exceeding normal export demand
@@ -26,7 +26,7 @@ All goal variables are scaled so that they take values between zero and one.
     
     The sector or product weights are given as weighted average of two possible weighting schemes: the base-year shares of the different sectors or products in output (for utilization), exports, or final demand, or equal weights. The allocations between the two possible weighting schemes are specified by the product and sector weight parameters ``\underline{\varphi}_u``, ``\underline{\varphi}_X``, and ``\underline{\varphi}_F``, which are also set in the [configuration file](@ref config-lgp-weights).
 
-When the `report-diagnostics` parameter is set to `true` in the [configuration file](@ref config-output-folders), Macro will export the structure of the LGP for each year to [the `diagnostics` folder](@ref model-outputs-diagnostics) in a set of files with names like `model_0_yyyy.txt`. The output looks something like this:
+When the `report-diagnostics` parameter is set to `true` in the [configuration file](@ref config-output-folders), AMES will export the structure of the LGP for each year to [the `diagnostics` folder](@ref model-outputs-diagnostics) in a set of files with names like `model_0_yyyy.txt`. The output looks something like this:
 ```
 Min 1.7333333333333334 ugap[1] + 0.5333333333333333 ugap[2] + 0.6000000000000001 ugap[3] + ...
 Subject to

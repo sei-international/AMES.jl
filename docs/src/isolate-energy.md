@@ -1,9 +1,9 @@
 ```@meta
-CurrentModule = LEAPMacro
+CurrentModule = AMES
 ```
 
 # [Isolating the energy sector](@id isolate-energy)
-The Macro model uses an approximation to separate a full input-output system, with both energy and non-energy sectors, into energy and a non-energy sub-systems.
+The AMES model uses an approximation to separate a full input-output system, with both energy and non-energy sectors, into energy and a non-energy sub-systems.
 
 To explain the approximation, start with the full system written in matrix form. Total output is given by a vector ``\mathbf{g}``, technical (inter-industry) coefficients by a matrix ``\mathbf{A}``, a further set of technical coefficients matching final demand to different supplying sectors ``\mathbf{S}``, combined household and government final demand ``\mathbf{F}``, investment demand ``\mathbf{I}``, exports ``\mathbf{X}``, imports ``\mathbf{M}``, and margins[^1] ``\mathbf{m}``. Separating into sub-matrices for energy (``E``) and non-energy (``N``) sectors, the system can be written
 ```math
@@ -83,12 +83,12 @@ In principle this can be solved together with the LEAP calculation in an iterati
 
 The term ``\mathbf{A}_{NE}\cdot\mathbf{g}_E`` is demand for non-energy goods from the energy sector. But the energy sectors in LEAP, which should appear in ``\mathbf{g}_E``, are different from the list of energy sectors in the national accounts, which appear in ``\mathbf{A}_{NE}``. That means that LEAP's energy sectors must be mapped to the national accounts through a combination of aggregation and (possible) disaggregation. That mapping would have to change every time the energy sectors in LEAP are changed.
 
-The mapping between the non-energy sectors in the Macro model and the non-energy drivers in LEAP is less problematic. Because LEAP is an energy planning model, the energy sector is developed in detail and the structure can change with the introduction of alternative energy scenarios. Other sectors are normally treated with much less detail and are less likely to change.
+The mapping between the non-energy sectors in the AMES model and the non-energy drivers in LEAP is less problematic. Because LEAP is an energy planning model, the energy sector is developed in detail and the structure can change with the introduction of alternative energy scenarios. Other sectors are normally treated with much less detail and are less likely to change.
 
-For many countries, the ``\mathbf{A}_{NE}\cdot\mathbf{g}_E`` term can be neglected. It is significant when the energy sector has a high level of demand for domestic non-energy goods and services. To take an important example, an oil exporter might provide professional services and manufactured parts to the oil sector, and these inputs might be important for employment and economic output. For most countries, however, the coupling will be small, and can be neglected. When it cannot be neglected, specific energy sectors, such as crude oil extraction, can be included in Macro's calculations, but potential output can be calculated by LEAP. An example for the coal sector is provided in the documentation for the [configuration file](@ref config-pass-vals-LEAP-to-Macro)
+For many countries, the ``\mathbf{A}_{NE}\cdot\mathbf{g}_E`` term can be neglected. It is significant when the energy sector has a high level of demand for domestic non-energy goods and services. To take an important example, an oil exporter might provide professional services and manufactured parts to the oil sector, and these inputs might be important for employment and economic output. For most countries, however, the coupling will be small, and can be neglected. When it cannot be neglected, specific energy sectors, such as crude oil extraction, can be included in AMES's calculations, but potential output can be calculated by LEAP. An example for the coal sector is provided in the documentation for the [configuration file](@ref config-pass-vals-LEAP-to-AMES)
 
 !!! note "Measuring the significance to the economy of the supply of non-energy goods and services to the energy sector"
-    A measure of how significant non-energy supply to the energy sector is for the economy is calculated within the Macro model. It is reported when the flag to report diagnostics is set in the Macro configuration file: see the documentation on the [diagnostics output files](@ref model-outputs-diagnostics).
+    A measure of how significant non-energy supply to the energy sector is for the economy is calculated within the AMES model. It is reported when the flag to report diagnostics is set in the AMES configuration file: see the documentation on the [diagnostics output files](@ref model-outputs-diagnostics).
 
 The measure of the importance of energy sector demand for non-energy products is calculated by the following algorithm. First, a Leontief inverse matrix for the full inter-industry matrix, ``\mathbf{L}^\text{full}``, is calculated,
 ```math

@@ -1,34 +1,34 @@
 ```@meta
-CurrentModule = LEAPMacro
+CurrentModule = AMES
 ```
 
 # [Quick start](@id quick-start)
 
-This documentation explains how to quickly run Macro without linking it to LEAP. To learn how to run Macro with LEAP, see the [LEAP exercise](@ref leap-exercise), but it is a good idea to follow this Quick Start first.
+This documentation explains how to quickly run AMES without linking it to LEAP. To learn how to run AMES with LEAP, see the [LEAP exercise](@ref leap-exercise), but it is a good idea to follow this Quick Start first.
 
-The quickest way to get started with Macro is by running the "Freedonia" sample model:
-1. Download the [demonstration files](assets/Macro.zip) as a zip file and save it to the folder of your choice
-1. Unzip the `Macro.zip` file
-1. Go the folder where you unzipped it (it will have a file in it named `LEAPMacro_params.yml`, together with several other files)
+The quickest way to get started with AMES is by running the "Freedonia" sample model:
+1. Download the [demonstration files](assets/AMES.zip) as a zip file and save it to the folder of your choice
+1. Unzip the `AMES.zip` file
+1. Go the folder where you unzipped it (it will have a file in it named `AMES_params.yml`, together with several other files)
 1. Start Julia in that folder and run the demo model:
 ```
-julia> import LEAPMacro
+julia> import AMES
 
-julia> LEAPMacro.run()
-With configuration file 'LEAPMacro_params.yml':
-Macro model run (0)...completed
+julia> AMES.run()
+With configuration file 'AMES_params.yml':
+AMES model run (0)...completed
 0
 ```
-If you see `Macro model run (0)...completed` followed by `0` then the model ran without any errors. The line reading `With configuration file 'LEAPMacro_params.yml'` says that Macro found and applied a [configuration file](@ref config) with the default filename `LEAPMacro_params.yml`.
+If you see `AMES model run (0)...completed` followed by `0` then the model ran without any errors. The line reading `With configuration file 'AMES_params.yml'` says that AMES found and applied a [configuration file](@ref config) with the default filename `AMES_params.yml`.
 
-All of the interesting output is in files. You should see a new file called `LEAPMacro_log_Baseline.txt` and a new `outputs` folder.
+All of the interesting output is in files. You should see a new file called `AMES_log_Baseline.txt` and a new `outputs` folder.
 
 ## The log file
-The log file `LEAPMacro_log_Baseline.txt` should show something like:
+The log file `AMES_log_Baseline.txt` should show something like:
 ```
 [ Info: 2022-08-21T10:43:55.627
-[ Info: Configuration file: 'LEAPMacro_params.yml'
-[ Info: Macro model run (0)...
+[ Info: Configuration file: 'AMES_params.yml'
+[ Info: AMES model run (0)...
 [ Info: Loading data...
 [ Info: Preparing model...
 [ Info: Calibrating for 2010: FEASIBLE_POINT

@@ -1,15 +1,15 @@
 ```@meta
-CurrentModule = LEAPMacro
+CurrentModule = AMES
 ```
 
 # [Configuration file](@id config)
 
-The configuration file is written in YAML syntax and has a `.yml` extension. By default, Macro assumes the configuration file will be called `LEAPMacro_params.yml`, but other names are possible, and in fact encouraged, because each configuration file corresponds to a different scenario.
+The configuration file is written in YAML syntax and has a `.yml` extension. By default, AMES assumes the configuration file will be called `AMES_params.yml`, but other names are possible, and in fact encouraged, because each configuration file corresponds to a different scenario.
 
 !!! tip "Online YAML checkers"
-    YAML is a widely-used language for representing data. As explained on the [official YAML website](https://yaml.org/), it is a "human-friendly data serialization language for all programming languages." Because YAML is so widely used, many online tools are available. While LEAP-Macro will report an error if it finds a problem with your YAML script, the online syntax checkers are more user-friendly, including the [YAML checker](https://yamlchecker.com/) and the [YAML validator](https://onlineyamltools.com/validate-yaml).
+    YAML is a widely-used language for representing data. As explained on the [official YAML website](https://yaml.org/), it is a "human-friendly data serialization language for all programming languages." Because YAML is so widely used, many online tools are available. While AMES will report an error if it finds a problem with your YAML script, the online syntax checkers are more user-friendly, including the [YAML checker](https://yamlchecker.com/) and the [YAML validator](https://onlineyamltools.com/validate-yaml).
 
-The configuration file used as an example on this page is the `LEAPMacro_params.yml` file that is distributed with the demonstration files (see the [Quick start](@ref quick-start) page).
+The configuration file used as an example on this page is the `AMES_params.yml` file that is distributed with the demonstration files (see the [Quick start](@ref quick-start) page).
 
 ```@contents
 Pages = ["config.md"]
@@ -45,7 +45,7 @@ This block also contains a flag saying whether the exchange rate time series, in
 #---------------------------------------------------------------------------
 # Supply-use table and supplementary tables as CSV files
 #---------------------------------------------------------------------------
-# Macro model data files
+# AMES model data files
 files:
     SUT: Freedonia_SUT.csv
     sector_info: sector_parameters.csv
@@ -73,16 +73,16 @@ report-diagnostics: true
 ### [LEAP run settings](@id config-leap-run-settings)
 The next block is optional, as are each of the individual entries. It has settings for running LEAP.
 
-To develop the Macro model independently of LEAP, set `run_leap` to `false`. This is the default value, and if it is set to `false` then the other parameters are unused.
+To develop the AMES model independently of LEAP, set `run_leap` to `false`. This is the default value, and if it is set to `false` then the other parameters are unused.
 
-To reduce the time spent while running LEAP and Macro together, set `hide_leap` to `true` (the default is `false`).
+To reduce the time spent while running LEAP and AMES together, set `hide_leap` to `true` (the default is `false`).
 
 The `max_runs` parameter can normally be set to 5 (the default value). In most models, convergence is reached after 2-3 iterations. However, it is better to be safe, so a higher value is used in the Freedonia model.
 
-The `max_tolerance` is the maximum allowable percentage difference in Macro model outputs between runs. The tolerance can be tightened (a smaller value) or loosened (a larger value) depending on the needs of the analysis. The default value is 5.0%. That is easily achieved in the Freedonia example, so a tighter value is entered into the Freedonia configuration file.
+The `max_tolerance` is the maximum allowable percentage difference in AMES model outputs between runs. The tolerance can be tightened (a smaller value) or loosened (a larger value) depending on the needs of the analysis. The default value is 5.0%. That is easily achieved in the Freedonia example, so a tighter value is entered into the Freedonia configuration file.
 ```yaml
 model:
-    # Set run_leap to "false" to do a single run of the Macro model without calling LEAP
+    # Set run_leap to "false" to do a single run of the AMES model without calling LEAP
     run_leap: false
     # Hide LEAP while running to (possibly) improve performance
     hide_leap: false
@@ -97,7 +97,7 @@ The next block is optional, and can be entirely omitted. This block allows for a
   * `investment`: A time series of exogenous investment demand beyond that simulated by the model (e.g., public investment)
   * `pot_output`: Potential output, which will override the value simulated by the model, where the entered values are converted to an index (e.g., agricultural production might be determined by an independent crop production model)
   * `max_utilization`: Maximum capacity utilization (e.g., if an exogenous constraint prevents operation at full capacity)
-  * `real_price`: Real prices for tradeables; the entered values are converted to an index by Macro and multiplied by an index of inflation at the user-specified world inflation rate
+  * `real_price`: Real prices for tradeables; the entered values are converted to an index by AMES and multiplied by an index of inflation at the user-specified world inflation rate
 The format and purpose of these files are explained in more detail under [external parameter files](@ref params-optional-input-files), and examples of each type of file are included in the sample Freedonia model.
 
 Because this block is optional, it can be deleted entirely or commented out (as in the Freedonia configuration file). Alternatively, individual files can be commented out or set to "`~`", which is the way to signal a missing value in YAML.
@@ -109,7 +109,7 @@ Because this block is optional, it can be deleted entirely or commented out (as 
 # For pot_output and max_utilization, include only those sectors where values are constrained -- the others will be unconstrained
 # For real_price:
 #   * Include only those products where values are specified -- for others the real price will be held constant
-#   * Prices for non-tradeables will be ignored; they are calculated internally by Macro
+#   * Prices for non-tradeables will be ignored; they are calculated internally by AMES
 exog-files:
     # investment: exog_invest.csv # Time series of exogenous investment demand, additional to that simulated by the model
     # pot_output: exog_pot_output.csv # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
@@ -118,7 +118,7 @@ exog-files:
 ```
 
 ## [Model parameters](@id config-model-params)
-The next several blocks contain some of the [exogenous parameters](@ref exog-param-vars) for the Macro model that are not specified in the files identified in earlier blocks.
+The next several blocks contain some of the [exogenous parameters](@ref exog-param-vars) for the AMES model that are not specified in the files identified in earlier blocks.
 
 ### [Initial value adjustments](@id config-init-val-adj)
 The first block of model parameters is optional. It specifies adjustments to initial values. Each parameter defaults to 0.0.
@@ -327,7 +327,7 @@ wage_elast_demand:
 [^1]: [Engel's Law](https://www.investopedia.com/terms/e/engels-law.asp) states that as income rises, the proportion of income spent on food declines. That means that the income elasticity of expenditure on food is less than one.
 
 ### [Linear goal program weights](@id config-lgp-weights)
-The Macro model solves a linear goal program for each year of the simulation. As described in the documentation for the [linear goal program](@ref lgp), the objective function contains weights, which are specified in the next block. The default weights should be suitable for most LEAP-Macro applications.
+The AMES model solves a linear goal program for each year of the simulation. As described in the documentation for the [linear goal program](@ref lgp), the objective function contains weights, which are specified in the next block. The default weights should be suitable for most AMES applications.
 
 The correspondence between the parameters and the [model variables](@ref exog-param-vars) is:
   * For category weights:
@@ -358,13 +358,13 @@ objective-fcn:
 ```
 
 ## [Linking to the supply-use table](@id config-sut)
-The next block is for specifying the structure of the [supply-use table](@ref sut) and how it relates to variables in Macro.
+The next block is for specifying the structure of the [supply-use table](@ref sut) and how it relates to variables in AMES.
 
 The first section of this block specifies sectors and products that are excluded from the simulation. The entire section or any item can be excluded. Alternatively, items can be set to the empty list `[]` or to YAML's "no value" symbol, `~`.
 
 There are three categories:
-1. First, and most important, are energy sectors and products. Those are excluded from the Macro calculation because the energy sector analysis is handled on a physical basis within LEAP, although they can optionally be included when [running the model](@ref running-macro) in stand-alone mode, without LEAP.
-2. Second are any territorial adjustments. Macro recalculates some parameters to take account of those entries. If none are present in the supply-use table, then an empty list `[]` can be entered for this parameter, as in the sample Freedonia model file shown below.
+1. First, and most important, are energy sectors and products. Those are excluded from the AMES calculation because the energy sector analysis is handled on a physical basis within LEAP, although they can optionally be included when [running the model](@ref running-macro) in stand-alone mode, without LEAP.
+2. Second are any territorial adjustments. AMES recalculates some parameters to take account of those entries. If none are present in the supply-use table, then an empty list `[]` can be entered for this parameter, as in the sample Freedonia model file shown below.
 3. Finally are any other excluded sectors and products. For example, some tables may have a "fictitious" product or sector entry.
 ```yaml
 #---------------------------------------------------------------------------
@@ -382,7 +382,7 @@ excluded_products:
     others: []
 ```
 
-Following that is a list of non-tradeable products and a domestic production share threshold. Imports and exports of products declared non-tradeable are set to zero within the Macro model, if they are not already zero in the supply-use table, and are maintained at zero throughout the simulation.
+Following that is a list of non-tradeable products and a domestic production share threshold. Imports and exports of products declared non-tradeable are set to zero within the AMES model, if they are not already zero in the supply-use table, and are maintained at zero throughout the simulation.
 
 Other products may be almost entirely imported. That can sometimes cause difficulties. If the domestic share of the total of imports and domestic production falls below the threshold specified in the configuration file, then the corresponding sector (but not the product) is excluded during the simulation.
 ```yaml
@@ -392,7 +392,7 @@ non_tradeable_products: [p_constr, p_comm]
 domestic_production_share_threshold: 1.0 # percent
 ```
 
-The following section specifies where to find the data needed by Macro within the supply-use table (a `CSV` file). Ranges are specified in standard spreadsheet form.
+The following section specifies where to find the data needed by AMES within the supply-use table (a `CSV` file). Ranges are specified in standard spreadsheet form.
 ```yaml
 SUT_ranges:
     # Matrices arranged product (rows) x sector (columns)
@@ -413,8 +413,8 @@ SUT_ranges:
     wages: J37:W38
 ```
 
-## [Mapping Macro to LEAP](@id config-link-LEAP)
-The next, and final, block specifies how LEAP and Macro are linked. Each of these entries is optional.
+## [Mapping AMES to LEAP](@id config-link-LEAP)
+The next, and final, block specifies how LEAP and AMES are linked. Each of these entries is optional.
 
 ### Core LEAP model information
 The first section in this block says which LEAP scenario to send and retrieve results to and from, and for which region. It also identifies the first historical year, if that is different from the start year. (The `last_historical_year` is the year just before LEAP's `First Scenario Year`.)
@@ -422,7 +422,7 @@ The first section in this block says which LEAP scenario to send and retrieve re
 If this section is omitted, then results are sent to and retrieved from the scenario currently active in LEAP, and for the currently active region (if any regions are specified). The `last_historical_year` is set to the start year.
 ```yaml
 #---------------------------------------------------------------------------
-# Parameters for running LEAP with the Macro model (LEAP-Macro)
+# Parameters for running LEAP with the AMES model (AMES)
 #---------------------------------------------------------------------------
 # Core information for the LEAP application (optional)
 LEAP-info:
@@ -433,10 +433,10 @@ LEAP-info:
     # The region (if any -- can omit, or enter a "~", meaning no value)
     region: ~
 ```
-Alternatively, separate scenarios can be specified if LEAP receives inputs from Macro for one scenario (`input_scenario`), but sends results back to Macro from another scenario (`result_scenario`). In this case, `scenario` should be omitted, or set to `~` (meaning "no value"). For example,
+Alternatively, separate scenarios can be specified if LEAP receives inputs from AMES for one scenario (`input_scenario`), but sends results back to AMES from another scenario (`result_scenario`). In this case, `scenario` should be omitted, or set to `~` (meaning "no value"). For example,
 ```yaml
 #---------------------------------------------------------------------------
-# Parameters for running LEAP with the Macro model (LEAP-Macro)
+# Parameters for running LEAP with the AMES model (AMES)
 #---------------------------------------------------------------------------
 # Core information for the LEAP application (optional)
 LEAP-info:
@@ -448,10 +448,10 @@ LEAP-info:
     ...
 ```
 
-### Pulling investment information from LEAP into Macro
-The next section specifies information regarding investment. By default, any investment reported in LEAP in a given year is totaled and passed to Macro with no adjustment: `inv_costs_units` is set to a blank (so LEAP applies the default currency unit), `inv_costs_scale` is set to 1.0, and `inv_costs_apply_xr` is set to `false`. However, some investment branches can be omitted, investment can be spread over several years, the currency unit can be set to a different value, the scaling factor can be specified, and the exchange rate can be applied.
+### Pulling investment information from LEAP into AMES
+The next section specifies information regarding investment. By default, any investment reported in LEAP in a given year is totaled and passed to AMES with no adjustment: `inv_costs_units` is set to a blank (so LEAP applies the default currency unit), `inv_costs_scale` is set to 1.0, and `inv_costs_apply_xr` is set to `false`. However, some investment branches can be omitted, investment can be spread over several years, the currency unit can be set to a different value, the scaling factor can be specified, and the exchange rate can be applied.
 
-As an example for setting the scaling factor, if entries in the Macro model input files are in millions of US dollars, and investment costs in LEAP are reported in US dollars, then the scaling factor is one million (1000000 or 1.0e+6).
+As an example for setting the scaling factor, if entries in the AMES model input files are in millions of US dollars, and investment costs in LEAP are reported in US dollars, then the scaling factor is one million (1000000 or 1.0e+6).
 
 If `inv_costs_apply_xr` is `true`, then the nominal exchange rate will be applied to the values from LEAP after scaling. In this calculation, the exchange rate will _not_ be applied as an index: it is assumed that the value entered into the [time series](@ref params-time-series) column `exchange_rate` is the actual nominal exchange rate. If that is not the case, then the scaling factor can be adjusted to ensure the correct units.
 
@@ -459,7 +459,7 @@ The `excluded_branches` entry is set to an empty list `[]` in the Freedonia exam
 
 The Freedonia configuration file below shows different ways to specify how costs are spread over multiple years. If this entry is blank, then the default is that all expenditure occurs in one year. Otherwise, a default value can be set that is applied to all branches. Additionally, a value or pattern can be set for specific branches.
 
-The distribution of costs over years can be set in one of two ways. If it is a single number (e.g., in example below, the default is 5 years), then total investment is divided equally across all of the years. If expenditure is set as a pattern, then it is specified as a list of values in brackets `[]`. The values in the list are then rescaled by Macro so that they sum to one. The example below for `New Oil Combustion Turbine` sums to 100, so 10% of expenditure will be applied in the first year, 20% in the second, and so on.
+The distribution of costs over years can be set in one of two ways. If it is a single number (e.g., in example below, the default is 5 years), then total investment is divided equally across all of the years. If expenditure is set as a pattern, then it is specified as a list of values in brackets `[]`. The values in the list are then rescaled by AMES so that they sum to one. The example below for `New Oil Combustion Turbine` sums to 100, so 10% of expenditure will be applied in the first year, 20% in the second, and so on.
 ```yaml
 LEAP-investment:
     # Currency units for investment costs
@@ -483,12 +483,12 @@ LEAP-investment:
             }
 ```
 
-### [Passing values from Macro to LEAP](@id config-indices-for-LEAP-Macro-link)
-The next sections specify where in LEAP to put indices as calculated by Macro. For each index, LEAP should contain at least one historical value, while the index supplied by Macro is applied to the last historical value in the specified `result_scenario`. Indices appear as columns in an `indices_#.csv` file in the [`results` output folder](@ref model-outputs-results), where `#` is the run number.
+### [Passing values from AMES to LEAP](@id config-indices-for-AMES-link)
+The next sections specify where in LEAP to put indices as calculated by AMES. For each index, LEAP should contain at least one historical value, while the index supplied by AMES is applied to the last historical value in the specified `result_scenario`. Indices appear as columns in an `indices_#.csv` file in the [`results` output folder](@ref model-outputs-results), where `#` is the run number.
 
 The first index is for GDP. It can be omitted, but if it is present, the entry in the configuration file gives the name for the index, the LEAP branch and variable where the index should be inserted and, to cover cases where the last historical year is after the base year, the last historical year.
 ```yaml
-# Association between Macro's GDP result and LEAP (optional)
+# Association between AMES's GDP result and LEAP (optional)
 GDP-branch:
     name: GDP
     branch: Key\GDP
@@ -497,18 +497,18 @@ GDP-branch:
 
 The second index is also optional, and has the same structure as for GDP.
 ```yaml
-# Association between Macro's employment result and LEAP (optional)
+# Association between AMES's employment result and LEAP (optional)
 Employment-branch:
     name: Employment
     branch: Key\Employment
     variable: Activity Level
 ```
 
-Next, the association between Macro sectors and LEAP sectors is specified. These entries are also optional. They start with a specification of the economic driver for LEAP, either production (the default) or value added. Value added subtracts from the value of production the cost of intermediate goods and services, to avoid double-counting when calculating gross domestic product (GDP).
+Next, the association between AMES sectors and LEAP sectors is specified. These entries are also optional. They start with a specification of the economic driver for LEAP, either production (the default) or value added. Value added subtracts from the value of production the cost of intermediate goods and services, to avoid double-counting when calculating gross domestic product (GDP).
 
 Production is a better variable to use when the corresponding variable in LEAP is a physical quantity. For example, in the Freedonia model, the activity level for the Iron and Steel sector is given as tonnes of steel. This driver can be set explicitly as `PROD`. However, in some LEAP models the activity level is value added. In that case, the default driver can be set to `VA`. The driving variable can be set by branch, as well, as shown in the `LEAP-sectors` example below.
 ```yaml
-# Association between Macro sectors and LEAP sectors (optional)
+# Association between AMES sectors and LEAP sectors (optional)
 LEAP-drivers:
     options:
         PROD: production
@@ -517,7 +517,7 @@ LEAP-drivers:
 ```
 the `LEAP-sectors` parameter, if present, contains a list of indices by sector. If no sectoral aggregation is desired, then this entry can be excluded entirely, set to `~` (meaning no value), or set to an empty list: `LEAP-sectors: []`.
 
-For each index, Macro will sum up the driver (either production or value added) across all of the sector codes listed. It will then calculate an index starting in the base year, and insert the index into the specified branches. In some cases, the same index might be applied to different branches. For example, if the supply-use table has a "services" sector but no transport, while LEAP has both a services and a commercial transport sector, the same index could be used to drive both.
+For each index, AMES will sum up the driver (either production or value added) across all of the sector codes listed. It will then calculate an index starting in the base year, and insert the index into the specified branches. In some cases, the same index might be applied to different branches. For example, if the supply-use table has a "services" sector but no transport, while LEAP has both a services and a commercial transport sector, the same index could be used to drive both.
 
 In the example below, note that `Iron and Steel` and `Other Industry` do not have a branch-specific driver, so they use the default, `PROD` (production). The `Commercial` entry does have a branch-specific driver, which is set to `VA` (value added).
 ```yaml
@@ -557,8 +557,8 @@ LEAP-sectors:
 
 ```
 
-### [Passing potential output and prices from LEAP to Macro](@id config-pass-vals-LEAP-to-Macro)
-The final sections say how to pass results for potential output and prices from LEAP to Macro. These are in addition to investment expenditure, which is automatically collected from LEAP and passed to Macro. Any values for potential output and prices drawn from LEAP override those specified in external [input files](@ref params-optional-input-files), if any. (Investment expenditure from LEAP is added to investment specified in external input files.)
+### [Passing potential output and prices from LEAP to AMES](@id config-pass-vals-LEAP-to-AMES)
+The final sections say how to pass results for potential output and prices from LEAP to AMES. These are in addition to investment expenditure, which is automatically collected from LEAP and passed to AMES. Any values for potential output and prices drawn from LEAP override those specified in external [input files](@ref params-optional-input-files), if any. (Investment expenditure from LEAP is added to investment specified in external input files.)
 
 The Freedonia configuration file does not specify potential output and prices from LEAP, so the entries are set equal to empty lists. Alternatively, they can be completely ommitted or set to the YAML "no value" symbol, `~`.
 ```yaml
@@ -567,7 +567,7 @@ LEAP-potential-output: []
 LEAP-prices: []
 ```
 
-To demonstrate how these sections might look, suppose that instead of excluding the `coal` sector as is done in the [link to the supply-use table](@ref config-sut), above, it is included in the Macro model, but potential output from the sector is provided by LEAP. That can be accomplished by setting
+To demonstrate how these sections might look, suppose that instead of excluding the `coal` sector as is done in the [link to the supply-use table](@ref config-sut), above, it is included in the AMES model, but potential output from the sector is provided by LEAP. That can be accomplished by setting
 ```yaml
 excluded_sectors:
     energy: [s_petr, s_util]
@@ -587,9 +587,9 @@ LEAP-potential-output:
     code: s_coal
    }
 ```
-Potential output is associated with a single sector in the Macro model, but can include values from multiple LEAP branches. If more than one LEAP branch is listed, then the values are summed together.
+Potential output is associated with a single sector in the AMES model, but can include values from multiple LEAP branches. If more than one LEAP branch is listed, then the values are summed together.
 
-If the price of coal is available from the LEAP model, then it can be brought into Macro using an entry like
+If the price of coal is available from the LEAP model, then it can be brought into AMES using an entry like
 ```yaml
 LEAP-prices:
  - {
@@ -598,4 +598,4 @@ LEAP-prices:
     codes: [p_coal]
    }
 ```
-Prices are associated with a single LEAP branch, but can be applied to multiple products in Macro.
+Prices are associated with a single LEAP branch, but can be applied to multiple products in AMES.

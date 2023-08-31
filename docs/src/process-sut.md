@@ -1,12 +1,12 @@
 ```@meta
-CurrentModule = LEAPMacro
+CurrentModule = AMES
 ```
 
 # [Processing the supply-use table](@id process-sut)
 
 ## The supply and use tables
 
-Information about [supply and use tables](@ref sut) (SUT) is provided elsewhere in this documentation. This page explains how the SUT is processed internally by Macro. The supply and use tables have the following structure:
+Information about [supply and use tables](@ref sut) (SUT) is provided elsewhere in this documentation. This page explains how the SUT is processed internally by AMES. The supply and use tables have the following structure:
 
 ### Supply table
 

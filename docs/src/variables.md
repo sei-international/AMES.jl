@@ -1,10 +1,10 @@
 
 ```@meta
-CurrentModule = LEAPMacro
+CurrentModule = AMES
 ```
 
 # [Variables](@id variables)
-The Macro model contains three types of variables:
+The AMES model contains three types of variables:
   * The [goal program variables](@ref lgp-vars) are solved in each time step (equal to one year) using a [linear goal program](@ref lgp).
   * The [dynamic parameters](@ref dynamic-param-vars) appear as parameters in the goal program, but are updated between runs. They are shown with an overline to make them easier to identify in the equations.
   * As the dynamic parameters are calculated, [intermediate variables](@ref intermed-vars) are introduced to simplify the equations and for reporting purposes.
@@ -135,7 +135,7 @@ The following are optional exogenous parameters:
 |:--------------------------------|:----------------------------------------------------------------------------------------------------------------------------------|
 | ``\underline{I}_\text{en}``     | Energy sector investment, retrieved from LEAP                                                             |
 | ``\underline{I}_\text{exog}``   | Other exogenous investment, not associated with a sector (default is 0.0)                                             |
-| ``\underline{z}_i^\text{exog}`` | Exogenously specified potential output (default is that Macro calculates potential output)                                        |
+| ``\underline{z}_i^\text{exog}`` | Exogenously specified potential output (default is that AMES calculates potential output)                                        |
 | ``\underline{u}_i^\text{max}``  | In the [linear goal program](@ref lgp), the maximum capacity utilization (default is 1.0)                                         |
 | ``\underline{a}_i``             | Rate constant for endogenous intermediate demand coefficients    |
 | ``\underline{\vartheta}_i``     | Exponent for endogenous intermediate demand coefficients         |

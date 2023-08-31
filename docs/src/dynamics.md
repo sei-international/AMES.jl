@@ -1,5 +1,5 @@
 ```@metaA
-CurrentModule = LEAPMacro
+CurrentModule = AMES
 ```
 
 # [Dynamics](@id dynamics)
@@ -8,9 +8,9 @@ In between runs of the [linear goal program](@ref lgp), the [dynamic parameters]
 In the equations below, a subscript ``+1`` indicates the next-year's value, and a subscript ``-1`` the previous year's value. An underline indicates an [exogenous parameter](@ref exog-param-vars), while an overline is a [dynamic parameter](@ref dynamic-param-vars).
 
 !!! info "Potential sector output vs. potential production"
-    One of the most important variables in the Macro model is potential output for a sector ``i``, ``\overline{z}_i``. Realized output ``g_i`` is equal to potential output multiplied by capacity utilization ``u_i``.
+    One of the most important variables in the AMES model is potential output for a sector ``i``, ``\overline{z}_i``. Realized output ``g_i`` is equal to potential output multiplied by capacity utilization ``u_i``.
     
-    Ordinarily, potential output is determined by investment through an [investment function](@ref dynamics-potential-output). However, Macro allows for potential output to be specified exogenously in an [optional parameter file](@ref params-optional-pot-output). This is presumed to reflect an informed policy decision that takes demand into account, so Macro adjusts import and export targets accordingly.
+    Ordinarily, potential output is determined by investment through an [investment function](@ref dynamics-potential-output). However, AMES allows for potential output to be specified exogenously in an [optional parameter file](@ref params-optional-pot-output). This is presumed to reflect an informed policy decision that takes demand into account, so AMES adjusts import and export targets accordingly.
 
     One complicating factor is that potential output is for a sector, whereas demand for exports and imports are for products. The connection between sectors and products is provided by the supply matrix. Defining a matrix
     ```math
@@ -79,7 +79,7 @@ where
 ```math
     A_{kl} = \sum_{i = 1}^{n_s} \underline{\mu}_i\underline{S}_{ik}\overline{D}_{li}.
 ```
-This system is solved by Macro using linear algebra.
+This system is solved by AMES using linear algebra.
 
 ## [Imports](@id dynamics-imports)
 The normal level of imports of good ``k`` as a fraction of domestic demand (intermediate, final, and investment) is updated based on the values calculated in the last run of the [linear goal program](@ref lgp), and then adjusted based on relative changes in world and domestic prices,
@@ -113,7 +113,7 @@ The reference level of imports is adjusted by the same factor,
 ```
 
 ### [_Domestic insertion_](@id dynamics-dom-insert)
-The Macro model reports an indicator called "domestic insertion". The term comes from the Caribbean structuralist tradition. That tradition notes that export-oriented firms must achieve an insertion into the global economy. However, for true development to occur, firms must also be inserted into the domestic economy to increase employment and demand for local products and services.
+The AMES model reports an indicator called "domestic insertion". The term comes from the Caribbean structuralist tradition. That tradition notes that export-oriented firms must achieve an insertion into the global economy. However, for true development to occur, firms must also be inserted into the domestic economy to increase employment and demand for local products and services.
 
 The domestic insertion indicator is defined in terms of two input-output matrices. First there is the standard input-output matrix, with elements
 ```math
@@ -135,12 +135,12 @@ The domestic insertion indicator for sector ``i`` is defined in terms of these L
 ```
 This gives the ratio of the domestic to the total demand per unit output from sector ``i``, including both direct and indirect demand.
 
-[^1]: Armington elasticities play an important role in trade models, but estimates very widely, and are mainly available for high-income countries. As a general rule, long-run elasticities (e.g., annual) are larger than short-run elasticities (e.g., monthly), and estimates tend to increase with the level of disaggregation of the data. Different statistical models can give very different results (e.g., estimates from systems of supply-demand equations tend to be about twice as large as estimates based on demand alone). If possible, find estimates for the country where Macro is being applied and at a similar level of disaggregation.
+[^1]: Armington elasticities play an important role in trade models, but estimates very widely, and are mainly available for high-income countries. As a general rule, long-run elasticities (e.g., annual) are larger than short-run elasticities (e.g., monthly), and estimates tend to increase with the level of disaggregation of the data. Different statistical models can give very different results (e.g., estimates from systems of supply-demand equations tend to be about twice as large as estimates based on demand alone). If possible, find estimates for the country where AMES is being applied and at a similar level of disaggregation.
 
 ## [Labor productivity](@id dynamics-labor-prod)
-The Macro model offers two ways to specify labor productivity growth: by 1) setting a labor productivity growth rate; or 2) allowing labor productivity to respond positively to economic growth, following the Kaldor-Verdoorn law[^2]. In either specification, parameters can be specified either by sector or for the whole economy. Sectoral labor productivity is written with a subscript, ``\lambda_i``, while economy-wide labor productivity is written with no subscript, ``\lambda.``
+The AMES model offers two ways to specify labor productivity growth: by 1) setting a labor productivity growth rate; or 2) allowing labor productivity to respond positively to economic growth, following the Kaldor-Verdoorn law[^2]. In either specification, parameters can be specified either by sector or for the whole economy. Sectoral labor productivity is written with a subscript, ``\lambda_i``, while economy-wide labor productivity is written with no subscript, ``\lambda.``
 
-When Kaldor-Verdoorn parameters are specified by sector, the Macro model calculates
+When Kaldor-Verdoorn parameters are specified by sector, the AMES model calculates
 ```math
 \hat{\lambda}_i = \underline{\alpha}^\text{KV}_i \hat{g}_i + \underline{\beta}^\text{KV}_i.
 ```
@@ -148,12 +148,12 @@ When specified at the level of the whole economy, economy-wide labor productivit
 ```math
 \hat{\lambda} = \underline{\alpha}^\text{KV} \hat{Y} + \underline{\beta}^\text{KV}.
 ```
-If labor productivity is specified as a constant value, either by sector or for the whole economy, Macro still applies the Kaldor-Verdoorn formula, but with ``\underline{\alpha}^\text{KV}_i = 0`` and ``\underline{\beta}^\text{KV}_i`` equal to the specified labor productivity growth rate.
+If labor productivity is specified as a constant value, either by sector or for the whole economy, AMES still applies the Kaldor-Verdoorn formula, but with ``\underline{\alpha}^\text{KV}_i = 0`` and ``\underline{\beta}^\text{KV}_i`` equal to the specified labor productivity growth rate.
 
 When productivity growth is specified for the economy as a whole, productivity growth in each sector is set to the economy-wide value, ``\hat{\lambda}_i = \hat{\lambda}``.
 
 !!! info "Formulations of the Kaldor-Verdoorn law"
-    The Kaldor-Verdoorn law has been expressed in multiple ways. The formulation used in the Macro model is one of the most common. Another is to write the equation in terms of employment growth ``\hat{L} = \hat{Y} - \hat{\lambda}``, in which case the coefficient on the growth rate is ``1 - \underline{\alpha}^\text{KV}``.
+    The Kaldor-Verdoorn law has been expressed in multiple ways. The formulation used in the AMES model is one of the most common. Another is to write the equation in terms of employment growth ``\hat{L} = \hat{Y} - \hat{\lambda}``, in which case the coefficient on the growth rate is ``1 - \underline{\alpha}^\text{KV}``.
 
 When parameters are specified by sector, employment, ``L``, is the sum of sector employment ``L_i``. For this reason, initial values for sectoral employment ``\underline{L}_{i0}`` must be specified for sectoral labor productivity growth. Employment growth in sector ``i`` is calculated as
 ```math
@@ -165,7 +165,7 @@ For the sectoral labor productivity model, the growth rate of total employment, 
 ```math
 \hat{L} = (1 + \hat{Y})/(1 + \hat{\lambda}) - 1.
 ```
-[^2]: The [Kaldor-Verdoorn law](https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/verdoorns-law) states that the growth rate of labor productivity is an increasing function of the growth rate of output. The coefficient relating output growth to labor productivity growth is often taken as a measure of increasing returns. If it is positive, then there are both static and dynamic increasing returns to growth. In the context of the Macro model, these take the form of learning-by-doing, where productivity increases with use of existing technology; and embodied technological change, where productivity increases with the introduction of improved technology.
+[^2]: The [Kaldor-Verdoorn law](https://www.encyclopedia.com/social-sciences/applied-and-social-sciences-magazines/verdoorns-law) states that the growth rate of labor productivity is an increasing function of the growth rate of output. The coefficient relating output growth to labor productivity growth is often taken as a measure of increasing returns. If it is positive, then there are both static and dynamic increasing returns to growth. In the context of the AMES model, these take the form of learning-by-doing, where productivity increases with use of existing technology; and embodied technological change, where productivity increases with the introduction of improved technology.
 
 ## [Wages](@id dynamics-wages)
 The wage share ``\omega_i`` in sector ``i`` is given by
@@ -214,7 +214,7 @@ Basic prices are used on the cost side of this equation, while an export-weighte
 p_{x,k} = \frac{X_k}{q_{s,k}} \underline{e}p_{w,k} + \left(1 - \frac{X_k}{q_{s,k}}\right)p_{d,k}.
 ```
 
-The Macro model does not track the capital stock. Instead, it tracks potential output, which is related to the capital stock through a sector-specific capital-output ratio. The calculation for the profit rate starts with the current unit price of capital goods ``p_K``, calculated as
+The AMES model does not track the capital stock. Instead, it tracks potential output, which is related to the capital stock through a sector-specific capital-output ratio. The calculation for the profit rate starts with the current unit price of capital goods ``p_K``, calculated as
 ```math
 p_K = \sum_{k=1}^{n_p}\underline{\theta}_k p_{d,k}.
 ```
@@ -239,7 +239,7 @@ C = \frac{\sum_{k=1}^{n_p} p_{w,k}(X_k-M_k)}{P_\text{GDP}Y}.
 ```
 The first term ``\gamma_{i0}`` is "autonomous investment". It represents long-run expectations. The other terms make up "induced investment" due to short-term changes in utilization, profits, borrowing costs, and net exports relative to GDP.
 
-The target value for utilization is full utilization, ``u_i = 1``, while for the bank rate it is the initial value for the neutral bank rate that enters the Taylor function, ``\underline{i}^\text{init}_{b0}`` (see below). The target for the profit rate, ``\underline{r}^*``, is calculated by Macro during an internal calibration step to be consistent with starting values for investment and profits, using a procedure described below in [Demand for investment goods](@ref dynamics-inv-dmd). The net exports-to-GDP ratio term tends to push the economy towards a zero net exports, with no surplus or deficit. As net exports are the negative of net foreign financing (investments less domestic saving), the behavioral assumption behind this term is that foreign investors see a repayment risk when net foreign financing is high relative to GDP and, conversely, opportunities when there are net financing outflows.
+The target value for utilization is full utilization, ``u_i = 1``, while for the bank rate it is the initial value for the neutral bank rate that enters the Taylor function, ``\underline{i}^\text{init}_{b0}`` (see below). The target for the profit rate, ``\underline{r}^*``, is calculated by AMES during an internal calibration step to be consistent with starting values for investment and profits, using a procedure described below in [Demand for investment goods](@ref dynamics-inv-dmd). The net exports-to-GDP ratio term tends to push the economy towards a zero net exports, with no surplus or deficit. As net exports are the negative of net foreign financing (investments less domestic saving), the behavioral assumption behind this term is that foreign investors see a repayment risk when net foreign financing is high relative to GDP and, conversely, opportunities when there are net financing outflows.
 
 If potential output is specified exogenously through the variable ``\underline{z}_i^\text{exog}``, then 
 ```math

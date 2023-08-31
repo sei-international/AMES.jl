@@ -30,7 +30,7 @@ otuputs
 In addition, AMES writes a log file called `AMES_log_XXXX.txt` to the main folder, where `XXXX` is the `output_folder` specified in the [configuration file](@ref config-general-settings). If the model fails, then the error message will be written to the log file.
 
 !!! info "Naming convention when AMES is run with energy sectors included"
-    The AMES model is meant to be run together with LEAP, as explained in the page on the [AMES link](@ref leap-ames-link). LEAP calculates demand for energy and energy production, while AMES covers the rest of the economy -- the energy sectors specified in the [configuration file](@ref config-sut) are excluded from AMES's calculations. However, for calibration it can be useful to run AMES separately from LEAP, with the energy sectors included. This is done by setting `include_energy_sectors = true` when calling the `AMES.run()` function (see [Running the AMES model](@ref running-ames) for details.)
+    The AMES model is meant to be run together with LEAP, as explained in the page on the [LEAP-AMES link](@ref leap-ames-link). LEAP calculates demand for energy and energy production, while AMES covers the rest of the economy -- the energy sectors specified in the [configuration file](@ref config-sut) are excluded from AMES's calculations. However, for calibration it can be useful to run AMES separately from LEAP, with the energy sectors included. This is done by setting `include_energy_sectors = true` when calling the `AMES.run()` function (see [Running the AMES model](@ref running-ames) for details.)
 
     When AMES is run with energy sectors included, the output folder is named `XXXX_full`, where `XXXX` is the `output_folder` specified in the [configuration file](@ref config-general-settings).
 

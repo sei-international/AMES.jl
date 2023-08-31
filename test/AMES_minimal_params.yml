@@ -14,7 +14,7 @@ years:
 #---------------------------------------------------------------------------
 # Supply-use table and supplementary tables as CSV files
 #---------------------------------------------------------------------------
-# Macro model data files
+# AMES model data files
 files:
     SUT: Freedonia_SUT.csv
     sector_info: minimal_sector_parameters.csv

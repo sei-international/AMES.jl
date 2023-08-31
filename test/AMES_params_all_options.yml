@@ -14,7 +14,7 @@ years:
 #---------------------------------------------------------------------------
 # Supply-use table and supplementary tables as CSV files
 #---------------------------------------------------------------------------
-# Macro model data files
+# AMES model data files
 files:
     SUT: Freedonia_SUT.csv
     sector_info: sector_parameters.csv
@@ -31,7 +31,7 @@ clear-folders:
 report-diagnostics: true
 
 model:
-    # Set run_leap to "false" to do a single run of the Macro model without calling LEAP
+    # Set run_leap to "false" to do a single run of the AMES model without calling LEAP
     run_leap: false
     # Hide LEAP while running to (possibly) improve performance
     hide_leap: false
@@ -47,7 +47,7 @@ model:
 # For pot_output and max_utilization, include only those sectors where values are constrained -- the others will be unconstrained
 # For real_price:
 #   * Include only those products where values are specified -- for others the real price will be held constant
-#   * Prices for non-tradeables will be ignored; they are calculated internally by Macro
+#   * Prices for non-tradeables will be ignored; they are calculated internally by AMES
 exog-files:
     investment: exog_invest.csv # Time series of exogenous investment demand, additional to that simulated by the model
     pot_output: exog_pot_output.csv # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
@@ -218,7 +218,7 @@ SUT_ranges:
     wages: J37:W38
 
 #---------------------------------------------------------------------------
-# Parameters for running LEAP with the Macro model (AMES)
+# Parameters for running LEAP with the AMES model
 #---------------------------------------------------------------------------
 # Core information for the LEAP application (optional)
 LEAP-info:
@@ -238,19 +238,19 @@ LEAP-investment:
     excluded_branches: []
 
 
-# Association between Macro's GDP result and LEAP (optional)
+# Association between AMES's GDP result and LEAP (optional)
 GDP-branch:
     name: GDP
     branch: Key\GDP
     variable: Activity Level
 
-# Association between Macro's employment result and LEAP (optional)
+# Association between AMES's employment result and LEAP (optional)
 Employment-branch:
     name: Employment
     branch: Key\Employment
     variable: Activity Level
 
-# Association between Macro sectors and LEAP sectors (optional)
+# Association between AMES sectors and LEAP sectors (optional)
 LEAP-sectors:
  - {
     name: Iron and Steel,

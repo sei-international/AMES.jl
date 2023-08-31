@@ -5,7 +5,7 @@ CurrentModule = AMES
 # [Calibrating with PEST](@id pest-calib)
 Calibrating a AMES model can sometimes require very many iterations of _running_ -- _changing parameters_ -- _rerunning_ -- _comparing results_. When this is the case, it is best to take a systematic approach, but that adds the burden of keeping track of prior changes and results. Automated calibration can make the process much easier.
 
-Starting with version 2.2.5, the AMES [demonstration files](assets/AMES.zip) come with a Julia script called `pest.jl` that will run the freely-available third-party parameter estimation tool [PEST](https://pesthomepage.org/). Together with its associated files `pest_run_leapmacro.jl` and `pest_config.yml`, the script first builds the input files needed by PEST and then, if PEST installed (see the [PEST download page](https://pesthomepage.org/programs)), it runs the PEST program.
+Starting with version 2.2.5, the AMES [demonstration files](assets/AMES.zip) come with a Julia script called `pest.jl` that will run the freely-available third-party parameter estimation tool [PEST](https://pesthomepage.org/). Together with its associated files `pest_run_leapames.jl` and `pest_config.yml`, the script first builds the input files needed by PEST and then, if PEST installed (see the [PEST download page](https://pesthomepage.org/programs)), it runs the PEST program.
 
 ## About PEST
 PEST was first written in 1994. Since then, it has been under continual development. It is widely used in environmental applications. From the [PEST homepage](https://pesthomepage.org/),
@@ -61,8 +61,8 @@ In addition, several PEST control file parameters can be changed from their defa
 Below is part of the output from running the `pest.jl` script included in the AMES demonstration files. The model is called 147 times, which would have taken a great deal of time if done by hand, and the optimum values for the parameters are chosen in a systematic way. Some points to note:
   * The PEST program must be downloaded from the [PEST website](https://pesthomepage.org/programs) and installed before the script can be run, and the script will issue an error and halt if `pest.exe` cannot be found;
   * The script builds three kinds of files: a template file (ending in `.tpl`), instruction files (ending in `.ins`), and a control file (ending in `.pst`);
-  * As recorded in the `Model command line:` the PEST control file calls the script `pest_run_leapmacro.jl`, which runs the AMES model;
-  * The model is run with a sysimage `AMES-sysimage.so`, which dramatically reduces the time it takes to load AMES (see the Tip on "Speeding up AMES with a pre-compiled system image" in the page on [running the AMES model](@ref running-macro));
+  * As recorded in the `Model command line:` the PEST control file calls the script `pest_run_leapames.jl`, which runs the AMES model;
+  * The model is run with a sysimage `AMES-sysimage.so`, which dramatically reduces the time it takes to load AMES (see the Tip on "Speeding up AMES with a pre-compiled system image" in the page on [running the AMES model](@ref running-ames));
   * The `pestchek.exe` program issues a warning, but that is not a problem: both PEST and the script allow output files to be used multiple times;
   * Information on the calibration is provided in files ending in `.rec`, `.sen`, `.res`, and `.svd`;
   * PEST generates an error file `###error.par.1`, but it recovers and tries other parameter values; if too many errors accumulate, PEST will halt and report the problem. In that case, looking at the `###error.par.N` files can help pinpoint problematic combinations of parameter values.
@@ -87,11 +87,11 @@ PEST Version 17.3. Watermark Numerical Computing.
 
 PEST is running in parameter estimation mode.
 
-PEST run record: case leapmacro_control
-(See file leapmacro_control.rec for full details.)
+PEST run record: case leapames_control
+(See file leapames_control.rec for full details.)
 
 Model command line:
-julia --sysimage=AMES-sysimage.so pest_run_leapmacro.jl AMES_params_calib.yml -c -e -v -s 1 -d collected_variables_0.csv
+julia --sysimage=AMES-sysimage.so pest_run_leapames.jl AMES_params_calib.yml -c -e -v -s 1 -d collected_variables_0.csv
 
 Running model .....
 
@@ -120,11 +120,11 @@ AMES model run (0)...completed
 
 Recording run statistics .....
 
-See file leapmacro_control.rec for full run details.
-See file leapmacro_control.sen for parameter sensitivities.
-See file leapmacro_control.seo for observation sensitivities.
-See file leapmacro_control.res for residuals.
-See file leapmacro_control.svd for history of SVD process.
+See file leapames_control.rec for full run details.
+See file leapames_control.sen for parameter sensitivities.
+See file leapames_control.seo for observation sensitivities.
+See file leapames_control.res for residuals.
+See file leapames_control.svd for history of SVD process.
 ```
 
 ## The `pest_config.yml` file
@@ -206,7 +206,7 @@ Values are provided as `[value, weight]`. Weights can often be set to one, but t
 ```
 
 ### The `AMES:` block
-The `AMES:` block contains information for running the AMES model. It starts with some general information, including the name for the output folder and commands for running Julia. Note that the entry for `julia: => command:`, which is the command for running the Julia program, has two important features. First, it assumes that Julia is on the Windows path, as specified by the PATH environment variable -- if not, then the full path to the Julia executable should be provided. Second, it calls a sysimage. This is highly recommended, because it saves a great deal of running time: see the Tip on "Speeding up AMES with a pre-compiled system image" in the page on [running the AMES model](@ref running-macro).
+The `AMES:` block contains information for running the AMES model. It starts with some general information, including the name for the output folder and commands for running Julia. Note that the entry for `julia: => command:`, which is the command for running the Julia program, has two important features. First, it assumes that Julia is on the Windows path, as specified by the PATH environment variable -- if not, then the full path to the Julia executable should be provided. Second, it calls a sysimage. This is highly recommended, because it saves a great deal of running time: see the Tip on "Speeding up AMES with a pre-compiled system image" in the page on [running the AMES model](@ref running-ames).
 
 The `julia: => resume_if_error:` entry should be set to `true` if the calibration halts due to errors when running PEST. The control file generated by the `pest.jl` script stipulates that PEST should attempt to restart the calculation with different starting parameter values in case AMES encounters an error (through the `lamforgive` and  `derforgive` settings). However, if that is insufficient, setting `resume_if_error:` to `true` tells AMES to attempt to recover in case of an error. This is less satisfactory, because some output files will be incomplete, but may be more robust.
 
@@ -218,7 +218,7 @@ AMES:
   output_folder: Calibration
   julia:
     # Note that script must accept thse flags:
-    # usage: pest_run_leapmacro.jl [-c] [-s SLEEP] [-d DATA_FILES [DATA_FILES...]] [-v] [-e] [-r] [-h] [config_file]
+    # usage: pest_run_leapames.jl [-c] [-s SLEEP] [-d DATA_FILES [DATA_FILES...]] [-v] [-e] [-r] [-h] [config_file]
     # positional arguments:
     #   config_file                                 name of config file (default: "AMES_params.yml")
     # optional arguments:
@@ -230,7 +230,7 @@ AMES:
     #   -r, --resume-if-error                       try to continue if the linear goal program returns an error
     #   -h, --help                                  show the help message and exit
     command: julia --sysimage=AMES-sysimage.so
-    script: pest_run_leapmacro.jl
+    script: pest_run_leapames.jl
     resume_if_error: false
     verbose_errors: false
     sleep: 0.1 # seconds, to avoid collisions with opening & closing files 

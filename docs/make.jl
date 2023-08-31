@@ -32,14 +32,14 @@ makedocs(
             "LEAP exercise" => "leap-exercise.md"
         ]
         "Model overview" => [
-            "LEAP-AMES link" => "leap-macro-link.md"
+            "LEAP-AMES link" => "leap-ames-link.md"
             "Theoretical background" => "theoretical-background.md"
         ]
         "Using AMES" => [
             "Configuration file" => "config.md"
             "Supply-use table" => "sut.md"
             "External parameter files" => "params.md"
-            "Running the AMES model" => "running-macro.md"
+            "Running the AMES model" => "running-ames.md"
             "Output files" => "model-outputs.md"
             "Preparing a model" => "prep-model.md"
             "Calibrating with PEST" => "pest-calib.md"

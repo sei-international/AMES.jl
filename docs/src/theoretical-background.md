@@ -35,7 +35,7 @@ Income elasticities of demand have been observed to change as incomes rise; for 
 
 Intermediate demand is determined through the [supply-use table](@ref sut), and is calculated through the AMES model's [linear goal program](@ref lgp). Intermediate demand coefficients can optionally depend on changing relative prices, as explained in the [Technical Details](@ref dynamics-intermed-dmd-coeff).
 
-## [Prices in the macro model](@id theoretical-background-prices)
+## [Prices in the ames model](@id theoretical-background-prices)
 Five prices appear in the AMES model:
   1. World prices for traded goods and services
   2. The exchange rate

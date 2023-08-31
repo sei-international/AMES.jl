@@ -2,7 +2,7 @@
 CurrentModule = AMES
 ```
 
-# [Running the AMES model](@id running-macro)
+# [Running the AMES model](@id running-ames)
 Once the configuration and external parameter files have been prepared, the AMES model can be run in a stand-alone mode without LEAP. If the LEAP model is also prepared, then AMES can be run from LEAP.
 
 ## Running AMES stand-alone
@@ -53,9 +53,9 @@ AMES model run (0)...completed
 ```
 
 ### Running from the Windows Command Prompt
-In some circumstances it can be helpful to specify options as command-line parameters and run AMES from the Windows Command Prompt. The ArgParse Julia package makes that relatively easy. Here is a sample script, which can be saved as `runleapmacro.jl`:
+In some circumstances it can be helpful to specify options as command-line parameters and run AMES from the Windows Command Prompt. The ArgParse Julia package makes that relatively easy. Here is a sample script, which can be saved as `runleapames.jl`:
 ```julia
-# script 'runleapmacro.jl'
+# script 'runleapames.jl'
 using AMES
 using ArgParse
 
@@ -104,19 +104,19 @@ AMES.run(parsed_args["config_file"],
               include_energy_sectors = parsed_args["include_energy_sectors"],
               continue_if_error = parsed_args["continue_if_error"])
 ```
-For example, if the configuration file as the the default filename, `AMES_params.yml`, then a call to the `runleapmacro.jl` script could look something like this:
+For example, if the configuration file as the the default filename, `AMES_params.yml`, then a call to the `runleapames.jl` script could look something like this:
 ```
-D:\path\to\model> julia runleapmacro.jl -ve
+D:\path\to\model> julia runleapames.jl -ve
 ```
 In this case, AMES would report verbose errors in the log file, and would include energy sectors.
 
 !!! tip "Speeding up AMES with a pre-compiled system image"
-    If AMES will be run multiple times from the command line, execution can be speeded up by pre-compiling the AMES plugin. In the [sample files](assets/AMES.zip), there is a Windows batch file, `make_AMES_sysimage.bat`. Running this batch file (from the command line or by double-clicking) will generate a "system image" called `AMES-sysimage.so`. After running the batch file, put the system image in the folder where you want to run AMES and call Julia with an additional `sysimage` argument -- `julia --sysimage=AMES-sysimage.so ...` -- where `...` is the name of your script followed by any command-line arguments. E.g., the call to `runleapmacro.jl` in the example above would become
+    If AMES will be run multiple times from the command line, execution can be speeded up by pre-compiling the AMES plugin. In the [sample files](assets/AMES.zip), there is a Windows batch file, `make_AMES_sysimage.bat`. Running this batch file (from the command line or by double-clicking) will generate a "system image" called `AMES-sysimage.so`. After running the batch file, put the system image in the folder where you want to run AMES and call Julia with an additional `sysimage` argument -- `julia --sysimage=AMES-sysimage.so ...` -- where `...` is the name of your script followed by any command-line arguments. E.g., the call to `runleapames.jl` in the example above would become
     ```
-    D:\path\to\model> julia --sysimage=AMES-sysimage.so runleapmacro.jl -ve
+    D:\path\to\model> julia --sysimage=AMES-sysimage.so runleapames.jl -ve
     ```
 
-## [Running AMES from LEAP](@id running-macro-from-LEAP)
+## [Running AMES from LEAP](@id running-ames-from-LEAP)
 The [Freedonia sample model](assets/AMES.zip) includes a Visual Basic script for running AMES from LEAP. Located in the `scripts` folder, and called `AMES_AMESModelCalc.vbs`, it can be placed in a LEAP Area folder and called from LEAP using LEAP's scripting feature. See the [quick start guide](@ref quick-start) for more information.
 
 The Visual Basic script assumes that the AMES model files are in a folder called `AMES` and it calls a Julia file called `AMES-run.jl` in that folder. The version of the `AMES-run.jl` file distributed with the Freedonia sample model looks like this:

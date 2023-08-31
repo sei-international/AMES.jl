@@ -26,7 +26,7 @@ As explained under [Quick Start](@ref quick-start), a full AMES model for the Fr
 !!! info "The LEAP Areas folder"
     Normally the LEAP Areas folder is located in your Windows user’s _Documents_ folder. To verify the location on your computer, open LEAP and look in `Settings > Folders > Areas`.
 
-![Unzipping the AMES.zip files](assets/images/leap_exercise/unzip_macro.png)
+![Unzipping the AMES.zip files](assets/images/leap_exercise/unzip_ames.png)
 
 ## Modifying LEAP
 The next steps involve modifying LEAP so that it can interface with the AMES model. Not many changes are needed, and all of them are in Key Assumptions.
@@ -114,10 +114,10 @@ model:
 ```
 If you copied the Visual Basic script correctly, then it should be accessible from the `Advanced > Run Area Script` menu. Select it and run it. You may need to give LEAP permission to run the script.
 
-![Running AMES from LEAP](assets/images/leap_exercise/run_leap_macro.png)
+![Running AMES from LEAP](assets/images/leap_exercise/run_ames.png)
 
 After a delay while the program loads, it will begin running the model. It may do multiple runs:
-![AMES running in the Windows Command Prompt](assets/images/leap_exercise/leap_macro_run_window_1.png)
+![AMES running in the Windows Command Prompt](assets/images/leap_exercise/ames_run_window_1.png)
 
 ### Examining the results
 Change to the Results view in LEAP, and look at the results for the _Key\GDP_ branch. They should now reflect the index calculated by the AMES model.
@@ -189,7 +189,7 @@ AMES.run("AMES_params_URB.yml")
 cd(curr_working_dir)
 ```
 Then run the script again. It will go through both scenarios.
-![AMES running in the Windows Command Prompt](assets/images/leap_exercise/leap_macro_run_window_2.png)
+![AMES running in the Windows Command Prompt](assets/images/leap_exercise/ames_run_window_2.png)
 
 To see the effect of changed urbanization assumption, in the **Results View**, select the **GDP** variable (_Key\GDP_), set the scenario selection to Urbanization, and set the comparison to “Differences vs. Baseline.” To see the year-on-year variation, change the default graph setting from “Every 2 years” to “All”:
 ![Changing graph settings to show all years](assets/images/leap_exercise/graphics_set_to_all_years.png)

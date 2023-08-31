@@ -30,7 +30,7 @@ otuputs
 In addition, AMES writes a log file called `AMES_log_XXXX.txt` to the main folder, where `XXXX` is the `output_folder` specified in the [configuration file](@ref config-general-settings). If the model fails, then the error message will be written to the log file.
 
 !!! info "Naming convention when AMES is run with energy sectors included"
-    The AMES model is meant to be run together with LEAP, as explained in the page on the [AMES link](@ref leap-macro-link). LEAP calculates demand for energy and energy production, while AMES covers the rest of the economy -- the energy sectors specified in the [configuration file](@ref config-sut) are excluded from AMES's calculations. However, for calibration it can be useful to run AMES separately from LEAP, with the energy sectors included. This is done by setting `include_energy_sectors = true` when calling the `AMES.run()` function (see [Running the AMES model](@ref running-macro) for details.)
+    The AMES model is meant to be run together with LEAP, as explained in the page on the [AMES link](@ref leap-ames-link). LEAP calculates demand for energy and energy production, while AMES covers the rest of the economy -- the energy sectors specified in the [configuration file](@ref config-sut) are excluded from AMES's calculations. However, for calibration it can be useful to run AMES separately from LEAP, with the energy sectors included. This is done by setting `include_energy_sectors = true` when calling the `AMES.run()` function (see [Running the AMES model](@ref running-ames) for details.)
 
     When AMES is run with energy sectors included, the output folder is named `XXXX_full`, where `XXXX` is the `output_folder` specified in the [configuration file](@ref config-general-settings).
 
@@ -102,7 +102,7 @@ When running with LEAP, the AMES model may be run several times to converge on a
 ![Results folder contents](assets/images/results_folder_files.png)
 
 !!! warning "Results cover only non-energy sectors"
-    By default, the AMES model reports results only for non-energy sectors. To include all sectors, set the option `include_energy_sectors = true` when [running the AMES model](@ref running-macro). 
+    By default, the AMES model reports results only for non-energy sectors. To include all sectors, set the option `include_energy_sectors = true` when [running the AMES model](@ref running-ames). 
 
 Two of the results files (with the run number indicated by `#`) contain multiple variables:
   * `indices_#.csv`: The indices that are passed to LEAP, as specified in the [configuration file](@ref config-indices-for-AMES-link) (if no indices are defined, then this file will not be written)

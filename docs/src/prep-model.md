@@ -15,7 +15,7 @@ Here are some proposed steps. It is best to start with an existing [configuratio
   1. Set the `run_leap` value to `false` in the configuration file [general settings](@ref config-leap-run-settings);
   1. Set the [initial value adjustments](@ref config-init-val-adj) to zero;
   1. Set the start and end years appropriately (see below) in the configuration file [general settings](@ref config-general-settings);
-  1. [Run the model](@ref running-macro) by calling `AMES.run(CONFIG_FILE, include_energy_sectors = true)`, where `CONFIG_FILE` is the name of your [configuration file](@ref config);
+  1. [Run the model](@ref running-ames) by calling `AMES.run(CONFIG_FILE, include_energy_sectors = true)`, where `CONFIG_FILE` is the name of your [configuration file](@ref config);
   1. Check the `AMES_log_XXXX_full.txt` log file[^1], where `XXXX` is the name of the `output_folder` setting in the configuration file [general settings](@ref config-general-settings), to check that the model ran without errors;
   1. If there were errors, troubleshoot using the [`diagnostics` files](@ref model-outputs-diagnostics);
   1. Confirm that the reported value in the `nonenergy_energy_link_measure.txt` file in the [`diagnostics` folder](@ref model-outputs-diagnostics) is reasonably small (see the Tip at the end of this page for what to do if it is large);
@@ -37,7 +37,7 @@ To link to LEAP:
   1. Set the list of [excluded `energy` sectors](@ref config-sut) to ones relevant to the analysis;
   1. Ensure that the link between the AMES model and LEAP is set correctly in the [configuration file](@ref config-link-LEAP);
   1. Set `run_leap` to `true` in the configuration file [general settings](@ref config-leap-run-settings);
-  1. See the guidelines for [running the AMES model](@ref running-macro-from-LEAP) to place the files and scripts correctly;
+  1. See the guidelines for [running the AMES model](@ref running-ames-from-LEAP) to place the files and scripts correctly;
   1. Run the AMES model from LEAP.
 
 !!! tip "Follow the AMES tutorial"

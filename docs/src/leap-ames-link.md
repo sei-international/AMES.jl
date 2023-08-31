@@ -2,7 +2,7 @@
 CurrentModule = AMES
 ```
 
-# [AMES link](@id leap-macro-link)
+# [AMES link](@id leap-ames-link)
 The link between the LEAP energy model and the AMES economic model is shown in the diagram below. For each of the sub-models -- LEAP and AMES -- most of the model development can be done independently. That allows energy experts to work on LEAP and economists to work on AMES, collaborating only where the models interact.
 
 The combined model is solved iteratively. The AMES model runs first, generating economic activity levels as inputs to LEAP. Then, LEAP runs, simulating the energy system. Among other results, LEAP may report energy sector investment, the supply of primary energy sources, and prices. These outputs can become inputs to the AMES model. If investment is calculated anywhere in LEAP, then it is collected and fed as an input to AMES. Primary energy production and prices are transferred if the correspondence between LEAP and AMES is specified in the [configuration file](@ref config-link-LEAP).

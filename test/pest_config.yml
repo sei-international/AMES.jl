@@ -53,7 +53,7 @@ AMES:
   output_folder: Calibration
   julia:
     # Note that script must accept thse flags:
-    # usage: pest_run_leapmacro.jl [-c] [-s SLEEP] [-d DATA_FILES [DATA_FILES...]] [-v] [-e] [-r] [-h] [config_file]
+    # usage: pest_run_ames.jl [-c] [-s SLEEP] [-d DATA_FILES [DATA_FILES...]] [-v] [-e] [-r] [-h] [config_file]
     # positional arguments:
     #   config_file                                 name of config file (default: "AMES_params.yml")
     # optional arguments:
@@ -65,7 +65,7 @@ AMES:
     #   -r, --resume-if-error                       try to continue if the linear goal program returns an error
     #   -h, --help                                  show the help message and exit
     command: julia --sysimage=AMES-sysimage.so
-    script: pest_run_leapmacro.jl
+    script: pest_run_ames.jl
     resume_if_error: false
     verbose_errors: false
     sleep: 0.1 # seconds, to avoid collisions with opening & closing files 

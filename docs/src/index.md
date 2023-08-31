@@ -3,7 +3,7 @@ CurrentModule = AMES
 ```
 
 # [Introduction to AMES](@id introduction)
-This documentation explains how to use **AMES**, the **A**daptable **M**acroeconomic **E**xtension for **S**ustainability analysis.
+Welcome to **AMES**, the **A**daptable **M**acroeconomic **E**xtension for **S**ustainability analysis.
 
 !!! info "Accessing the code"
     AMES is open source and hosted on GitHub. If you wish to access the code, please visit the [AMES GitHub repository](https://github.com/sei-international/AMES.jl).

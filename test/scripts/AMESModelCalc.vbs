@@ -103,7 +103,14 @@ If IsNull(juliapath) Then
 	' Wscript.echo doesn't work when using LEAP 64-bit
 	msgbox("Could not locate the Julia executable. Try adding the path to the executable to the Windows environment variable named 'Path'.")
 Else
-	path = Chr(34) & juliapath & Chr(34) & " " & Chr(34) & amesdir & amesfile & Chr(34)
+	' Path to precompiled image
+	sopath = amesdir & "AMES-sysimage.so"
+	Set FSO = CreateObject("Scripting.FileSystemObject")
+	If FSO.FileExists(sopath) Then
+		path = Chr(34) & juliapath & Chr(34) & " --sysimage=" & Chr(34) & sopath & Chr(34) & " " & Chr(34) & amesdir & amesfile & Chr(34)
+	Else
+		path = Chr(34) & juliapath & Chr(34) & " " & Chr(34) & amesdir & amesfile & Chr(34)
+	End If
 
 	errorcode = shell.Run(path, style, waitTillComplete)
 End If

@@ -148,7 +148,7 @@ If LEAP cannot be started, return `missing`
 """
 function connect_to_leap()
 	try
-        win32PyObj = pyimport_conda("win32com.client", "win32com")
+        win32PyObj = pyimport_conda("win32com.client", "pywin32")
 		LEAPPyObj = win32PyObj.Dispatch("Leap.LEAPApplication")
         max_loops = 5
         while !LEAPPyObj.ProgramStarted && max_loops > 0

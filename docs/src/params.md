@@ -102,12 +102,12 @@ Here is the example from the Freedonia sample model:
 ![Freedonia time_series file](assets/images/time_series.png)
 
 ## [Optional input files](@id params-optional-input-files)
-External inputs for investment, potential output, and prices can be supplied from LEAP. Investment expenditure is collected automatically, while potential output and prices can be specified in the [configuration file](@ref config-pass-vals-LEAP-to-AMES). Additionally, for non-energy sectors, it is possible to specify any or all of four [optional input files](@ref config-optional-input-files) for: investment demand; potential output; maximum capacity utilization; and real prices for tradeables.
+External inputs for investment, potential output, and prices can be supplied from LEAP. Investment expenditure is collected automatically, while potential output and prices can be specified in the [configuration file](@ref config-pass-vals-LEAP-to-AMES). Additionally, for non-energy sectors, it is possible to specify  [optional input files](@ref config-optional-input-files) for: investment demand; potential output; maximum capacity utilization; and real prices for tradeables. Multiple files can be provided for each type.
 
 ### [Investment demand](@id params-optional-exog-investment)
 The AMES model calculates investment for non-energy sectors based on expected demand and profitability: see the explanation of [potential output](@ref dynamics-potential-output) in the Technical Details. However, for public infrastructure investment -- which is driven by policy goals, rather than private profitability, and where the capital stock is not associated with a particular sector -- investment must be specified exogenously. (When externally specified investment *is* associated with a particular sector, it is better to specify potential output: see below.)
 
-The investment demand parameter file has the following structure:
+Investment demand parameter files have the following structure:
 
 | `year` | `addl_investment` |
 |-------:|------------------:|
@@ -120,7 +120,7 @@ Note that not all years need to be included. For example, if there is investment
 ### [Potential output](@id params-optional-pot-output)
 In the AMES model, potential output is determined by investment: see [potential output](@ref dynamics-potential-output) in the Technical Details. In some cases, it is best to override this behavior. For example, output from agriculture might be determined by an external crop model, or the output from the mining sector might be constrained by the availability of the ore. In other cases, the production level might be set as a policy target or through a sector-specific planning document. In these cases, potential output can be specified for specific sectors, and AMES will calculate investment.
 
-The potential output parameter file has the following structure:
+Potential output parameter files have the following structure:
 
 | `year` |       `sec_1` |       `sec_2` | ... |
 |-------:|--------------:|--------------:|----:|
@@ -134,7 +134,7 @@ The sequence of values is converted internally into an index. For this reason, *
 ### [Maximum capacity utilization](@id params-optional-max-utilization)
 Capacity utilization in the AMES model is determined in each time step by solving a [linear goal program](@ref lgp). By default, maximum capacity utilization is equal to 1.0. However, in some cases, capacity utilization might be constrained. For example, during a disease outbreak, some service sector activities may be limited, and during a drought, manufacturing plants that rely on cooling or process water might have to curtail production. In these cases, a maximum level of capacity utilization less than one can be specified exogenously.
 
-The maximum capacity utilization file has the following structure:
+Maximum capacity utilization files have the following structure:
 
 | `year` |     `sec_1` |     `sec_2` | ... |
 |-------:|------------:|------------:|----:|
@@ -149,7 +149,7 @@ In the file, all years must be listed. However, values do not have to specified 
 ### [World real price trends for selected tradeables](@id params-optional-price-trend)
 In the AMES model, "world" prices for goods and services are specified exogenously, while domestic prices are calculated as a markup on costs. By default, world prices for all tradeables grow at a uniform, user-specified world inflation rate. However, optionally, real world price indices for all or some tradeables can be specified. The real price trend is then adjusted for inflation at the world inflation rate.
 
-The real price file has the following structure:
+Real price files have the following structure:
 
 | `year` |  `prod_1` |  `prod_2` | ... |
 |-------:|----------:|----------:|----:|

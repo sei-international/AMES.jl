@@ -93,14 +93,14 @@ model:
 ```
 
 ### [Optional input files](@id config-optional-input-files)
-The next block is optional, and can be entirely omitted. This block allows for additional exogenous time series that might be of interest in some studies. Any of them can be added or excluded individually. The allowed input files include:
-  * `investment`: A time series of exogenous investment demand beyond that simulated by the model (e.g., public investment)
+The next block is optional, and can be entirely omitted. This block allows for additional exogenous time series that might be of interest in some studies. Any of these entries can be: commented out; a `~` (meaning no file specified); an individual file; or a list of files. The allowed types of input files include:
+  * `investment`: Time series of exogenous investment demand beyond that simulated by the model (e.g., public investment)
   * `pot_output`: Potential output, which will override the value simulated by the model, where the entered values are converted to an index (e.g., agricultural production might be determined by an independent crop production model)
   * `max_utilization`: Maximum capacity utilization (e.g., if an exogenous constraint prevents operation at full capacity)
   * `real_price`: Real prices for tradeables; the entered values are converted to an index by AMES and multiplied by an index of inflation at the user-specified world inflation rate
 The format and purpose of these files are explained in more detail under [external parameter files](@ref params-optional-input-files), and examples of each type of file are included in the sample Freedonia model.
 
-Because this block is optional, it can be deleted entirely or commented out (as in the Freedonia configuration file). Alternatively, individual files can be commented out or set to "`~`", which is the way to signal a missing value in YAML.
+Because this block is optional, it can be deleted entirely or commented out. Alternatively, individual files can be commented out or set to "`~`", which is the way to signal a missing value in YAML. The Freedonia configuration file sets them to `~`:
 ```yaml
 #---------------------------------------------------------------------------
 # Optional input files for exogenous time series (CSV files)
@@ -111,11 +111,22 @@ Because this block is optional, it can be deleted entirely or commented out (as 
 #   * Include only those products where values are specified -- for others the real price will be held constant
 #   * Prices for non-tradeables will be ignored; they are calculated internally by AMES
 exog-files:
-    # investment: exog_invest.csv # Time series of exogenous investment demand, additional to that simulated by the model
-    # pot_output: exog_pot_output.csv # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
-    # max_utilization: exog_max_util.csv # Maximum capacity utilization: sectors label columns; years label rows (must lie between 0 and 1)
-    # real_price: exog_price.csv # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
+    investment: ~ # Time series of exogenous investment demand, additional to that simulated by the model
+    pot_output: ~ # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
+    max_utilization: ~ # Maximum capacity utilization: sectors label columns; years label rows (must lie between 0 and 1)
+    real_price: ~ # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
 ```
+
+Exogenous input files are provided with the `AMES_params_all_options.yml` configuration file, which includes examples of both individual files and lists of files:
+```yaml
+exog-files:
+    investment: exog_invest.csv # Time series of exogenous investment demand, additional to that simulated by the model
+    pot_output: [exog_pot_output_slow.csv, exog_pot_output_base.csv] # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
+    max_utilization: exog_max_util.csv # Maximum capacity utilization: sectors label columns; years label rows (must lie between 0 and 1)
+    real_price: [exog_price_ag.csv, exog_price_en.csv] # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
+```
+!!! warning "Lists of optional input files"
+    When lists of optional input files are provided, as in the example above of `pot_output: [exog_pot_output_slow.csv, exog_pot_output_base.csv]`, the files are read in order. If two files specify time series for the same sector or product, then the later file will overwrite the earlier file.
 
 ## [Model parameters](@id config-model-params)
 The next several blocks contain some of the [exogenous parameters](@ref exog-param-vars) for the AMES model that are not specified in the files identified in earlier blocks.

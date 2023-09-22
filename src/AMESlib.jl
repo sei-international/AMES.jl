@@ -22,6 +22,15 @@ function gettext(s::AbstractString)
 	return(gt.gettext(s))
 end
 
+"Return a string vector whether given a string or a vector of strings"
+function stringvec(s::Union{String,Vector{String}})
+	if s isa String
+		return [s]
+	else
+		return s
+	end
+end
+
 "Write a matrix to a CSV file."
 function write_matrix_to_csv(filename::AbstractString, array::Array, rownames::Vector, colnames::Vector)
 	open(filename, "w") do io

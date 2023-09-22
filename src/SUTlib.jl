@@ -519,39 +519,47 @@ function get_var_params(params::Dict)
         params["files"]["xr-is-real"] = false
     end
 
-    # Optional files
-    investment_df = nothing
-    pot_output_df = nothing
-    max_util_df = nothing
-    real_price_df = nothing
+    # Optional files: Store as arrays of dataframes
+    investment_df_vec = DataFrame[]
+    pot_output_df_vec = DataFrame[]
+    max_util_df_vec = DataFrame[]
+    real_price_df_vec = DataFrame[]
     if AMESlib.haskeyvalue(params, "exog-files")
         file_list = params["exog-files"]
         if AMESlib.haskeyvalue(file_list, "investment")
-            if isfile(joinpath("inputs",file_list["investment"]))
-                investment_df = CSV.read(joinpath("inputs",file_list["investment"]), DataFrame)
-            else
-                @warn format(AMESlib.gettext("Exogenous investment file '{1}' does not exist in the 'inputs' folder"), file_list["investment"])
+            for f in AMESlib.stringvec(file_list["investment"])
+                if isfile(joinpath("inputs", f))
+                    push!(investment_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                else
+                    @warn format(AMESlib.gettext("Exogenous investment file '{1}' does not exist in the 'inputs' folder"), f)
+                end
             end
         end
         if AMESlib.haskeyvalue(file_list, "pot_output")
-            if isfile(joinpath("inputs",file_list["pot_output"]))
-                pot_output_df = CSV.read(joinpath("inputs",file_list["pot_output"]), DataFrame)
-            else
-                @warn format(AMESlib.gettext("Exogenous potential output file '{1}' does not exist in the 'inputs' folder"), file_list["pot_output"])
+            for f in AMESlib.stringvec(file_list["pot_output"])
+                if isfile(joinpath("inputs", f))
+                    push!(pot_output_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                else
+                    @warn format(AMESlib.gettext("Exogenous potential output file '{1}' does not exist in the 'inputs' folder"), f)
+                end
             end
         end
         if AMESlib.haskeyvalue(file_list, "max_utilization")
-            if isfile(joinpath("inputs",file_list["max_utilization"]))
-                max_util_df = CSV.read(joinpath("inputs",file_list["max_utilization"]), DataFrame)
-            else
-                @warn format(AMESlib.gettext("Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"), file_list["max_utilization"])
+            for f in AMESlib.stringvec(file_list["max_utilization"])
+                if isfile(joinpath("inputs", f))
+                    push!(max_util_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                else
+                    @warn format(AMESlib.gettext("Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"), f)
+                end
             end
         end
         if AMESlib.haskeyvalue(file_list, "real_price")
-            if isfile(joinpath("inputs",file_list["real_price"]))
-                real_price_df = CSV.read(joinpath("inputs",file_list["real_price"]), DataFrame)
-            else
-                @warn format(AMESlib.gettext("Exogenous real price file '{1}' does not exist in the 'inputs' folder"), file_list["real_price"])
+            for f in AMESlib.stringvec(file_list["real_price"])
+                if isfile(joinpath("inputs", f))
+                    push!(real_price_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                else
+                    @warn format(AMESlib.gettext("Exogenous real price file '{1}' does not exist in the 'inputs' folder"), f)
+                end
             end
         end
     end
@@ -764,100 +772,108 @@ function get_var_params(params::Dict)
     retval_exog.max_util = Array{Union{Missing, Float64}}(missing, length(sim_years), length(sec_ndxs))
     retval_exog.price = Array{Union{Missing, Float64}}(missing, length(sim_years), length(prod_ndxs))
 
-    if !isnothing(investment_df)
-        for row in eachrow(investment_df)
-            data_year = floor(Int64, row[:year])
-            if data_year in sim_years
-                retval_exog.I_addl[data_year - sim_years[1] + 1] = row[:addl_investment]
+    if length(investment_df_vec) > 0
+        for investment_df in investment_df_vec
+            for row in eachrow(investment_df)
+                data_year = floor(Int64, row[:year])
+                if data_year in sim_years
+                    retval_exog.I_addl[data_year - sim_years[1] + 1] = row[:addl_investment]
+                end
             end
-       end
+        end
     end
 
-    if !isnothing(pot_output_df)
-        # Check that all simulation years are covered
-        missing_years = setdiff(sim_years, intersect(sim_years, floor.(Int64, pot_output_df[!,:year])))
-        if !isempty(missing_years)
-            throw(ErrorException(format(AMESlib.gettext("Exogenous potential output file '{1}' does not contain all simulation years. Missing {2}."),
-                  params["exog-files"]["pot_output"], join(missing_years, ", "))))
-        end
-        data_sec_codes = names(pot_output_df)[2:end]
-        # Using findfirst: there should only be one entry per code
-        data_sec_ndxs = [findfirst(params["included_sector_codes"] .== sec_code) for sec_code in data_sec_codes]
-        # Confirm that the sectors are included
-        if !isnothing(findfirst(isnothing.(data_sec_ndxs)))
-            invalid_sec_ndxs = findall(x -> isnothing(x), data_sec_ndxs)
-            invalid_sec_codes = data_sec_codes[invalid_sec_ndxs]
-            if length(invalid_sec_codes) > 1
-                invalid_sec_codes_str = format(AMESlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["pot_output"])
-            else
-                invalid_sec_codes_str = format(AMESlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["pot_output"])
+    if length(pot_output_df_vec) > 0
+        for pot_output_df in pot_output_df_vec
+            # Check that all simulation years are covered
+            missing_years = setdiff(sim_years, intersect(sim_years, floor.(Int64, pot_output_df[!,:year])))
+            if !isempty(missing_years)
+                throw(ErrorException(format(AMESlib.gettext("Exogenous potential output file '{1}' does not contain all simulation years. Missing {2}."),
+                    params["exog-files"]["pot_output"], join(missing_years, ", "))))
             end
-            deleteat!(data_sec_ndxs, invalid_sec_ndxs)
-            pot_output_df = pot_output_df[:,Not(1 .+ invalid_sec_ndxs)]
-            @warn invalid_sec_codes_str
-        end
-        for row in eachrow(pot_output_df)
-            data_year = floor(Int64, row[:year])
-            if data_year in sim_years
-                retval_exog.pot_output[data_year - sim_years[1] + 1, data_sec_ndxs] .= Vector(row[2:end])
+            data_sec_codes = names(pot_output_df)[2:end]
+            # Using findfirst: there should only be one entry per code
+            data_sec_ndxs = [findfirst(params["included_sector_codes"] .== sec_code) for sec_code in data_sec_codes]
+            # Confirm that the sectors are included
+            if !isnothing(findfirst(isnothing.(data_sec_ndxs)))
+                invalid_sec_ndxs = findall(x -> isnothing(x), data_sec_ndxs)
+                invalid_sec_codes = data_sec_codes[invalid_sec_ndxs]
+                if length(invalid_sec_codes) > 1
+                    invalid_sec_codes_str = format(AMESlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["pot_output"])
+                else
+                    invalid_sec_codes_str = format(AMESlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["pot_output"])
+                end
+                deleteat!(data_sec_ndxs, invalid_sec_ndxs)
+                pot_output_df = pot_output_df[:,Not(1 .+ invalid_sec_ndxs)]
+                @warn invalid_sec_codes_str
             end
-       end
+            for row in eachrow(pot_output_df)
+                data_year = floor(Int64, row[:year])
+                if data_year in sim_years
+                    retval_exog.pot_output[data_year - sim_years[1] + 1, data_sec_ndxs] .= Vector(row[2:end])
+                end
+            end
+        end
     end
 
-    if !isnothing(max_util_df)
-        data_sec_codes = names(max_util_df)[2:end]
-        # Using findfirst: there should only be one entry per code
-        data_sec_ndxs = [findfirst(params["included_sector_codes"] .== sec_code) for sec_code in data_sec_codes]
-        # Confirm that the sectors are included
-        if !isnothing(findfirst(isnothing.(data_sec_ndxs)))
-            invalid_sec_ndxs = findall(x -> isnothing(x), data_sec_ndxs)
-            invalid_sec_codes = data_sec_codes[invalid_sec_ndxs]
-            if length(invalid_sec_codes) > 1
-                invalid_sec_codes_str = format(AMESlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["max_utilization"])
-            else
-                invalid_sec_codes_str = format(AMESlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["max_utilization"])
+    if length(max_util_df_vec) > 0
+        for max_util_df in max_util_df_vec
+            data_sec_codes = names(max_util_df)[2:end]
+            # Using findfirst: there should only be one entry per code
+            data_sec_ndxs = [findfirst(params["included_sector_codes"] .== sec_code) for sec_code in data_sec_codes]
+            # Confirm that the sectors are included
+            if !isnothing(findfirst(isnothing.(data_sec_ndxs)))
+                invalid_sec_ndxs = findall(x -> isnothing(x), data_sec_ndxs)
+                invalid_sec_codes = data_sec_codes[invalid_sec_ndxs]
+                if length(invalid_sec_codes) > 1
+                    invalid_sec_codes_str = format(AMESlib.gettext("Sector codes '{1}' in input file '{2}' not valid"), join(invalid_sec_codes, "', '"), params["exog-files"]["max_utilization"])
+                else
+                    invalid_sec_codes_str = format(AMESlib.gettext("Sector code '{1}' in input file '{2}' not valid"), invalid_sec_codes[1], params["exog-files"]["max_utilization"])
+                end
+                deleteat!(data_sec_ndxs, invalid_sec_ndxs)
+                max_util_df = max_util_df[:,Not(1 .+ invalid_sec_ndxs)]
+                @warn invalid_sec_codes_str
             end
-            deleteat!(data_sec_ndxs, invalid_sec_ndxs)
-            max_util_df = max_util_df[:,Not(1 .+ invalid_sec_ndxs)]
-            @warn invalid_sec_codes_str
+            for row in eachrow(max_util_df)
+                data_year = floor(Int64, row[:year])
+                if data_year in sim_years
+                    retval_exog.max_util[data_year - sim_years[1] + 1, data_sec_ndxs] .= Vector(row[2:end])
+                end
+            end
         end
-        for row in eachrow(max_util_df)
-            data_year = floor(Int64, row[:year])
-            if data_year in sim_years
-                retval_exog.max_util[data_year - sim_years[1] + 1, data_sec_ndxs] .= Vector(row[2:end])
-            end
-       end
     end
 
-    if !isnothing(real_price_df)
-        # Check that all simulation years are covered
-        missing_years = setdiff(sim_years, intersect(sim_years, floor.(Int64, real_price_df[!,:year])))
-        if !isempty(missing_years)
-            throw(ErrorException(format(AMESlib.gettext("Exogenous prices file '{1}' does not contain all simulation years. Missing {2}."),
-                  params["exog-files"]["real_price"], join(missing_years, ", "))))
-        end
-        data_prod_codes = names(real_price_df)[2:end]
-        # Using findfirst: there should only be one entry per code
-        data_prod_ndxs = [findfirst(params["included_product_codes"] .== prod_code) for prod_code in data_prod_codes]
-        # Confirm that the products are included
-        if !isnothing(findfirst(isnothing.(data_prod_ndxs)))
-            invalid_prod_ndxs = findall(x -> isnothing(x), data_prod_ndxs)
-            invalid_prod_codes = data_prod_codes[invalid_prod_ndxs]
-            if length(invalid_prod_codes) > 1
-                invalid_prod_codes_str = format(AMESlib.gettext("Product codes '{1}' in input file '{2}' not valid"), join(invalid_prod_codes, "', '"), params["exog-files"]["real_price"])
-            else
-                invalid_prod_codes_str = format(AMESlib.gettext("Product code '{1}' in input file '{2}' not valid"), invalid_prod_codes[1], params["exog-files"]["real_price"])
+    if length(real_price_df_vec) > 0
+        for real_price_df in real_price_df_vec
+            # Check that all simulation years are covered
+            missing_years = setdiff(sim_years, intersect(sim_years, floor.(Int64, real_price_df[!,:year])))
+            if !isempty(missing_years)
+                throw(ErrorException(format(AMESlib.gettext("Exogenous prices file '{1}' does not contain all simulation years. Missing {2}."),
+                    params["exog-files"]["real_price"], join(missing_years, ", "))))
             end
-            deleteat!(data_prod_ndxs, invalid_prod_ndxs)
-            real_price_df = real_price_df[:,Not(1 .+ invalid_prod_ndxs)]
-            @warn invalid_prod_codes_str
-        end
-        for row in eachrow(real_price_df)
-            data_year = floor(Int64, row[:year])
-            if data_year in sim_years
-                retval_exog.price[data_year - sim_years[1] + 1, data_prod_ndxs] .= Vector(row[2:end])
+            data_prod_codes = names(real_price_df)[2:end]
+            # Using findfirst: there should only be one entry per code
+            data_prod_ndxs = [findfirst(params["included_product_codes"] .== prod_code) for prod_code in data_prod_codes]
+            # Confirm that the products are included
+            if !isnothing(findfirst(isnothing.(data_prod_ndxs)))
+                invalid_prod_ndxs = findall(x -> isnothing(x), data_prod_ndxs)
+                invalid_prod_codes = data_prod_codes[invalid_prod_ndxs]
+                if length(invalid_prod_codes) > 1
+                    invalid_prod_codes_str = format(AMESlib.gettext("Product codes '{1}' in input file '{2}' not valid"), join(invalid_prod_codes, "', '"), params["exog-files"]["real_price"])
+                else
+                    invalid_prod_codes_str = format(AMESlib.gettext("Product code '{1}' in input file '{2}' not valid"), invalid_prod_codes[1], params["exog-files"]["real_price"])
+                end
+                deleteat!(data_prod_ndxs, invalid_prod_ndxs)
+                real_price_df = real_price_df[:,Not(1 .+ invalid_prod_ndxs)]
+                @warn invalid_prod_codes_str
             end
-       end
+            for row in eachrow(real_price_df)
+                data_year = floor(Int64, row[:year])
+                if data_year in sim_years
+                    retval_exog.price[data_year - sim_years[1] + 1, data_prod_ndxs] .= Vector(row[2:end])
+                end
+            end
+        end
     end
 
     return retval_exog, retval_techchange

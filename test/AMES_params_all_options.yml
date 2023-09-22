@@ -50,9 +50,9 @@ model:
 #   * Prices for non-tradeables will be ignored; they are calculated internally by AMES
 exog-files:
     investment: exog_invest.csv # Time series of exogenous investment demand, additional to that simulated by the model
-    pot_output: exog_pot_output.csv # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
+    pot_output: [exog_pot_output_slow.csv, exog_pot_output_base.csv] # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
     max_utilization: exog_max_util.csv # Maximum capacity utilization: sectors label columns; years label rows (must lie between 0 and 1)
-    real_price: exog_price.csv # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
+    real_price: [exog_price_ag.csv, exog_price_en.csv] # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
 
 #---------------------------------------------------------------------------
 # Adjustment parameters for initializing variables

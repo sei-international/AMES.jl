@@ -8,9 +8,9 @@ compatibility with Google Analytics 4.
 """
 function Documenter.Writers.HTMLWriter.analytics_script(tracking_id::AbstractString)
     if isempty(tracking_id)
-        return Documenter.Utilities.DOM.Tag(Symbol("#RAW#"))("")
+        return Documenter.DOM.Tag(Symbol("#RAW#"))("")
     else
-        return Documenter.Utilities.DOM.Tag(Symbol("#RAW#"))("""<!-- Global site tag (gtag.js) - Google Analytics -->
+        return Documenter.DOM.Tag(Symbol("#RAW#"))("""<!-- Global site tag (gtag.js) - Google Analytics -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=$(tracking_id)"></script>
         <script>
           window.dataLayer = window.dataLayer || [];

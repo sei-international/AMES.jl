@@ -86,26 +86,36 @@ end
 "Create LEAP `Interp()` expression from an array of values."
 function build_interp_expression(base_year::Integer, newdata::Array; lasthistoricalyear::Integer=0)
     # Creates start of expression. Includes historical data if available
-    if lasthistoricalyear > 0
-        newexpression = string("If(year <= ", lasthistoricalyear, ", ScenarioValue(Current Accounts), Value(", base_year,") * Interp(")
-        diff = lasthistoricalyear - base_year + 2
-        year = lasthistoricalyear + 1
+    if all(isnan.(newdata))
+        # Are all the values "NaN"? Then set to base year, with a warning
+        warntext = AMESlib.gettext("All values were 'NaN'")
+        if lasthistoricalyear > 0
+            newexpression = string("If(year <= ", lasthistoricalyear, ", ScenarioValue(Current Accounts), Value(", base_year,")); ", warntext)
+        else
+            newexpression = string("Value(", base_year,"); ", warntext)
+        end
     else
-        newexpression = string("(Value(", base_year,") * Interp(")
-        diff = 2
-        year = base_year + 1
-    end
+        if lasthistoricalyear > 0
+            newexpression = string("If(year <= ", lasthistoricalyear, ", ScenarioValue(Current Accounts), Value(", base_year,") * Interp(")
+            diff = lasthistoricalyear - base_year + 2
+            year = lasthistoricalyear + 1
+        else
+            newexpression = string("(Value(", base_year,") * Interp(")
+            diff = 2
+            year = base_year + 1
+        end
 
-    # Incorporates AMES results into the rest of the expression
-    for i = diff:size(newdata,1)
-        if isnan(newdata[i]) == false
-            newexpression = string(newexpression, year, ", ", newdata[i], ", ")
+        # Incorporates AMES results into the rest of the expression
+        for i = diff:size(newdata,1)
+            if isnan(newdata[i]) == false
+                newexpression = string(newexpression, year, ", ", newdata[i], ", ")
+            end
+            if i == size(newdata,1)
+                newexpression = newexpression[1:(lastindex(newexpression)-2)]
+                newexpression = string(newexpression, "))")
+            end
+            year = year + 1
         end
-        if i == size(newdata,1)
-            newexpression = newexpression[1:(lastindex(newexpression)-2)]
-            newexpression = string(newexpression, "))")
-        end
-        year = year + 1
     end
     return newexpression
 end # build_interp_expression

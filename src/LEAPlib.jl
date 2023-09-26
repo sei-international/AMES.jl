@@ -90,9 +90,9 @@ function build_interp_expression(base_year::Integer, newdata::Array; lasthistori
         # Are all the values "NaN"? Then set to base year, with a warning
         warntext = AMESlib.gettext("All values were 'NaN'")
         if lasthistoricalyear > 0
-            newexpression = string("If(year <= ", lasthistoricalyear, ", ScenarioValue(Current Accounts), Value(", base_year,")); ", warntext)
+            newexpression = string("If(year <= ", lasthistoricalyear, ", ScenarioValue(Current Accounts), Value(", base_year,"))? ", warntext)
         else
-            newexpression = string("Value(", base_year,"); ", warntext)
+            newexpression = string("Value(", base_year,")? ", warntext)
         end
     else
         if lasthistoricalyear > 0

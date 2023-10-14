@@ -331,8 +331,9 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
                             I_en_tot = b.Variable("Investment Costs").Value(sim_years[t])
                         end
                         I_en_addition = build_pattern * I_en_tot / params["LEAP-investment"]["inv_costs_scale"]
-                        for s in 0:min(length(sim_years) - t, length(I_en_addition) - 1)
-                            I_en_temp[t + s] += I_en_addition[s + 1]
+                        L = length(I_en_addition)
+                        for s in max(1, L - t + 1):L
+                            I_en_temp[t + s - L] += I_en_addition[s]
                         end
                     end
                     leapvals.I_en += I_en_temp

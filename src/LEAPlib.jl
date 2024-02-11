@@ -1,6 +1,6 @@
 "Module `LEAPlib` exports functions for linking AMES to LEAP in `AMES.jl`"
 module LEAPlib
-using PyCall, DataFrames, CSV, UUIDs, Formatting
+using PythonCall, DataFrames, CSV, UUIDs, Formatting
 
 export hide_leap, send_results_to_leap, calculate_leap, get_version_info, get_results_from_leap, LEAPresults
 
@@ -78,7 +78,7 @@ end # initialize_leapresults
 "Get LEAP version information by either name or ID"
 function get_version_info(version::Union{Nothing,Integer,AbstractString})
     LEAP = connect_to_leap()
-    version_info = LEAP.Versions(version).Name
+    version_info = pyconvert(LEAP.Versions(version).Name)
     disconnect_from_leap(LEAP)
     return version_info
 end
@@ -126,7 +126,7 @@ Set a LEAP branch-variable expression.
 The region and scenario arguments can be omitted by leaving them as empty strings.
 Note that performance is best if neither region nor scenario is specified.
 """
-function set_branchvar_expression(leapapplication::PyObject, branch::AbstractString, variable::AbstractString, newexpression::AbstractString; region::AbstractString = "", scenario::AbstractString = "")
+function set_branchvar_expression(leapapplication::Py, branch::AbstractString, variable::AbstractString, newexpression::AbstractString; region::AbstractString = "", scenario::AbstractString = "")
     # Set ActiveRegion and ActiveScenario as Julia doesn't allow a function call (ExpressionRS) to be set to a value
     if region != ""
         leapapplication.ActiveRegion = region
@@ -158,7 +158,7 @@ If LEAP cannot be started, return `missing`
 """
 function connect_to_leap()
 	try
-        win32PyObj = pyimport_conda("win32com.client", "pywin32")
+        win32PyObj = pyimport("win32com.client", "pywin32")
 		LEAPPyObj = win32PyObj.Dispatch("Leap.LEAPApplication")
         max_loops = 5
         while !LEAPPyObj.ProgramStarted && max_loops > 0
@@ -177,11 +177,9 @@ function connect_to_leap()
 	end
 end  # connect_to_leap
 
-"Repeatedly call PyCall's `pydecref(obj)` until null"
+"Wrapper for pydel!()"
 function disconnect_from_leap(LEAPPyObj)
-    while !ispynull(LEAPPyObj)
-    	pydecref(LEAPPyObj)
-    end
+    pydel!(LEAPPyObj)
 end # disconnect_from_leap
 
 "Calculate the LEAP model, returning results for the specified scenario."

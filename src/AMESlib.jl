@@ -1,7 +1,7 @@
 "Module `AMESlib` is a collection of common functions and constants for `AMES.jl`"
 module AMESlib
 
-using DataFrames, Formatting, PyCall
+using DataFrames, Formatting, PythonCall
 
 export write_matrix_to_csv, write_vector_to_csv, excel_range_to_mat, haskeyvalue, ϵ,
 	   write_header_to_csv, append_row_to_csv, stringvec_to_quotedstringvec!,
@@ -19,7 +19,7 @@ function gettext(s::AbstractString)
 	gt = pyimport("gettext")
 	gt.bindtextdomain("AMES", joinpath(@__DIR__, "locale"))
 	gt.textdomain("AMES")
-	return(gt.gettext(s))
+	return(pyconvert(String, gt.gettext(s)))
 end
 
 "Return a string vector whether given a string or a vector of strings"

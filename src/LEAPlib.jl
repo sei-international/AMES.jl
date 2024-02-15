@@ -63,6 +63,23 @@ end
     NotesView = 7
 end
 
+"Wrappers for pyconvert to different Julia types"
+function LEAPint(n::Py)
+    return pyconvert(Int64, n)
+end
+
+function LEAPbool(b::Py)
+    return pyconvert(Bool, b)
+end
+
+function LEAPstring(s::Py)
+    return pyconvert(String, s)
+end
+
+function LEAPfloat(f::Py)
+    return pyconvert(Float64, f)
+end
+
 "Return an initialized LEAPresults struct"
 function initialize_leapresults(params::Dict)
     ny = params["years"]["end"] - params["years"]["start"] + 1
@@ -78,7 +95,7 @@ end # initialize_leapresults
 "Get LEAP version information by either name or ID"
 function get_version_info(version::Union{Nothing,Integer,AbstractString})
     LEAP = connect_to_leap()
-    version_info = pyconvert(LEAP.Versions(version).Name)
+    version_info = LEAPstring(LEAP.Versions(version).Name)
     disconnect_from_leap(LEAP)
     return version_info
 end
@@ -158,14 +175,14 @@ If LEAP cannot be started, return `missing`
 """
 function connect_to_leap()
 	try
-        win32PyObj = pyimport("win32com.client", "pywin32")
+        win32PyObj = pyimport("win32com.client")
 		LEAPPyObj = win32PyObj.Dispatch("Leap.LEAPApplication")
         max_loops = 5
-        while !LEAPPyObj.ProgramStarted && max_loops > 0
+        while !LEAPbool(LEAPPyObj.ProgramStarted) && max_loops > 0
             sleep(5)
             max_loops -= 1
         end
-        if !LEAPPyObj.ProgramStarted
+        if !LEAPbool(LEAPPyObj.ProgramStarted)
             error(AMESlib.gettext("LEAP is not responding"))
             return missing
         else
@@ -179,7 +196,7 @@ end  # connect_to_leap
 
 "Wrapper for pydel!()"
 function disconnect_from_leap(LEAPPyObj)
-    pydel!(LEAPPyObj)
+    PythonCall.pydel!(LEAPPyObj)
 end # disconnect_from_leap
 
 "Calculate the LEAP model, returning results for the specified scenario."
@@ -303,15 +320,15 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
     end
     try
         for b in LEAP.Branches
-            if b.BranchType == Int(TransformationProcessBranchType) && b.Level == 4 && b.VariableExists("Investment Costs")
+            if LEAPint(b.BranchType) == Int(TransformationProcessBranchType) && LEAPint(b.Level) == 4 && LEAPbool(b.VariableExists("Investment Costs"))
                 is_excluded = false
                 for excluded_text in params["LEAP-investment"]["excluded_branches"]
-                    is_excluded = is_excluded || occursin(Regex(excluded_text, "i"), b.FullName)
+                    is_excluded = is_excluded || occursin(Regex(excluded_text, "i"), LEAPstring(b.FullName))
                 end
                 if !is_excluded
                     build_pattern = default_pattern
                     for build_branch in params["LEAP-investment"]["distribute_costs_over"]["by_branch"]
-                        if lowercase(build_branch["path"]) == lowercase(b.FullName)
+                        if lowercase(build_branch["path"]) == lowercase(LEAPstring(b.FullName))
                             if isa(build_branch["value"], Number)
                                 build_time = AMESlib.float_to_int(build_branch["value"])
                                 build_pattern = ones(build_time)/build_time
@@ -324,9 +341,9 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
                     I_en_temp .= 0.0 # Initialize to zero
                     for t in eachindex(sim_years)
                         if params["LEAP-investment"]["inv_costs_unit"] != ""
-                            I_en_tot = b.Variable("Investment Costs").Value(sim_years[t], params["LEAP-investment"]["inv_costs_unit"])
+                            I_en_tot = LEAPfloat(b.Variable("Investment Costs").Value(sim_years[t], params["LEAP-investment"]["inv_costs_unit"]))
                         else
-                            I_en_tot = b.Variable("Investment Costs").Value(sim_years[t])
+                            I_en_tot = LEAPfloat(b.Variable("Investment Costs").Value(sim_years[t]))
                         end
                         I_en_addition = build_pattern * I_en_tot / params["LEAP-investment"]["inv_costs_scale"]
                         L = length(I_en_addition)

@@ -1,4 +1,4 @@
-"Module `SUTlib` exports functions for parsing the configuration file, supply-use table, and paramter files for `AMES.jl`"
+"Module `SUTlib` exports functions for parsing the configuration file, supply-use table, and parameter files for `AMES.jl`"
 module SUTlib
 using CSV, DataFrames, LinearAlgebra, YAML, Logging, Formatting
 

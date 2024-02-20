@@ -83,6 +83,14 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     global_params["calibration_path"] = joinpath("outputs/", output_folder_name, "calibration")
     global_params["diagnostics_path"] = joinpath("outputs/", output_folder_name, "diagnostics")
 
+    # Check that years are present
+    if !AMESlib.haskeyvalue(global_params, "years")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must includes simulation years"))))
+    else
+        if !AMESlib.haskeyvalue(global_params["years"], "start") || !AMESlib.haskeyvalue(global_params["years"], "end")
+            throw(ErrorException(format(AMESlib.gettext("Years must include both 'start' and 'end'"))))
+        end
+    end
 	# First, check if any sectors or products should be excluded because production is zero (or effectively zero, for products)
 	SUT_df = CSV.read(joinpath("inputs",global_params["files"]["SUT"]), header=false, DataFrame)
 	M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["imports"]), dims=2))

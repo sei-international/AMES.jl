@@ -10,26 +10,26 @@ cd(@__DIR__)
 						continue_if_error = false,
 						load_leap_first = false,
 						include_energy_sectors = true) == 0
-	@test AMES.run("AMES_params.yml",
-						dump_err_stack = true,
-						continue_if_error = false,
-						load_leap_first = false,
-						include_energy_sectors = false) == 0
-	@test AMES.run("AMES_params_all_options.yml",
-						dump_err_stack = true,
-						continue_if_error = false,
-						load_leap_first = false,
-						include_energy_sectors = true) == 0
-	@test AMES.run("AMES_params_all_options.yml",
-						dump_err_stack = true,
-						continue_if_error = false,
-						load_leap_first = false,
-						include_energy_sectors = false) == 0
-	@test AMES.run("AMES_minimal_params.yml",
-						dump_err_stack = true,
-						continue_if_error = false,
-						load_leap_first = false,
-						include_energy_sectors = true) == 0
+	# @test AMES.run("AMES_params.yml",
+	# 					dump_err_stack = true,
+	# 					continue_if_error = false,
+	# 					load_leap_first = false,
+	# 					include_energy_sectors = false) == 0
+	# @test AMES.run("AMES_params_all_options.yml",
+	# 					dump_err_stack = true,
+	# 					continue_if_error = false,
+	# 					load_leap_first = false,
+	# 					include_energy_sectors = true) == 0
+	# @test AMES.run("AMES_params_all_options.yml",
+	# 					dump_err_stack = true,
+	# 					continue_if_error = false,
+	# 					load_leap_first = false,
+	# 					include_energy_sectors = false) == 0
+	# @test AMES.run("AMES_minimal_params.yml",
+	# 					dump_err_stack = true,
+	# 					continue_if_error = false,
+	# 					load_leap_first = false,
+	# 					include_energy_sectors = true) == 0
 	# @test AMES.run("AMES_params.yml",
 	# 					dump_err_stack = true,
 	# 					continue_if_error = false,

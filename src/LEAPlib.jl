@@ -369,7 +369,7 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
                     # Driver is allowed to be a sum across multiple branches
                     for b in params["LEAP-potential-output"][i]["branches"]
                         for t in eachindex(sim_years)
-                            leapvals.pot_output[t,s] += LEAP.Branch(b["branch"]).Variable(b["variable"]).Value(sim_years[t])
+                            leapvals.pot_output[t,s] += LEAPfloat(LEAP.Branch(b["branch"]).Variable(b["variable"]).Value(sim_years[t]))
                         end
                     end
                 end
@@ -383,7 +383,7 @@ function get_results_from_leap(params::Dict, run_number::Integer, get_results_fr
             for i in eachindex(params["LEAP-prices"])
                 b = params["LEAP-prices"][i] # This is a single branch/variable combination
                 for t in eachindex(sim_years)
-                    price = LEAP.Branch(b["branch"]).Variable(b["variable"]).Value(sim_years[t])
+                    price = LEAPfloat(LEAP.Branch(b["branch"]).Variable(b["variable"]).Value(sim_years[t]))
                     # Assign price to each product in a list of product codes
                     for p in params["LEAP_price_indices"][i]
                         leapvals.price[t,p] = price

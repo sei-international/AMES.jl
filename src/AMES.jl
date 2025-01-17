@@ -21,7 +21,19 @@ using .AMEScore, .AMESlib
 
 export run
 
-"Run an AMES model as specified in `config_file`. If running from LEAP, set `include_energy_sectors` to `false` (the default)."
+"""
+Run an AMES model as specified in `config_file`. If running from LEAP, set `include_energy_sectors` to `false` (the default).
+
+    run(config_file::AbstractString = "AMES_params.yml";
+			 dump_err_stack::Bool = false,
+			 include_energy_sectors::Bool = false,
+			 load_leap_first::Bool = false,
+			 get_results_from_leap_version::Union{Nothing,Integer,AbstractString} = nothing, # Only used if load_leap_first = true
+			 only_push_leap_results::Bool = false,
+			 run_number_start::Integer = 0,
+			 continue_if_error::Bool = false,
+			 add_timestamp::Bool = false)
+"""
 function run(config_file::AbstractString = "AMES_params.yml";
 			 dump_err_stack::Bool = false,
 			 include_energy_sectors::Bool = false,
@@ -29,7 +41,8 @@ function run(config_file::AbstractString = "AMES_params.yml";
 			 get_results_from_leap_version::Union{Nothing,Integer,AbstractString} = nothing, # Only used if load_leap_first = true
 			 only_push_leap_results::Bool = false,
 			 run_number_start::Integer = 0,
-			 continue_if_error::Bool = false)
+			 continue_if_error::Bool = false,
+			 add_timestamp::Bool = false) # Mainly for testing, create a new results folder and add a date/time string to the name
 
 	# Ensure needed folders exist
 	if !isdir("inputs")
@@ -52,6 +65,13 @@ function run(config_file::AbstractString = "AMES_params.yml";
 
 	params = YAML.load_file(config_file)
 
+	# Configure timestamp if requested
+	if add_timestamp
+		date_time_string = Dates.format(now(),"yyyy-mm-ddTHHMMSS")
+	else
+		date_time_string = nothing
+	end
+
 	# Enable logging
 	if include_energy_sectors
 		logfilename = format("AMES_log_{1}_full.txt", params["output_folder"])
@@ -69,7 +89,9 @@ function run(config_file::AbstractString = "AMES_params.yml";
 	@info format(AMESlib.gettext("Configuration file: '{1}'"), config_file)
 	exit_status = 0
 	try
-		AMEScore.leapmacro(config_file, logfile, include_energy_sectors, load_leap_first, get_results_from_leap_version, only_push_leap_results, run_number_start, continue_if_error)
+		AMEScore.leapmacro(config_file, logfile, include_energy_sectors, load_leap_first,
+						   get_results_from_leap_version, only_push_leap_results, run_number_start,
+						   continue_if_error, date_time_string)
 	catch err
 		exit_status = 1
 		println(format(AMESlib.gettext("AMES exited with an error: Please check the log file '{1}'"), logfilename))

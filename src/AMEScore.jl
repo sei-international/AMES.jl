@@ -1003,10 +1003,11 @@ function leapmacro(param_file::AbstractString,
 				   get_results_from_leap_version::Union{Nothing,Integer,AbstractString} = nothing,
 				   only_push_leap_results::Bool = false,
 				   run_number_start::Integer = 0,
-				   continue_if_error::Bool = false)
+				   continue_if_error::Bool = false,
+				   date_time_string::AbstractString = nothing)
 
     # Read in global parameters
-    params = SUTlib.parse_param_file(param_file, include_energy_sectors = include_energy_sectors)
+    params = SUTlib.parse_param_file(param_file, include_energy_sectors = include_energy_sectors, date_time_string = date_time_string)
 
 	# Clean up folders if requested
 	clean_folders(params)

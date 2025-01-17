@@ -69,7 +69,7 @@ mutable struct TechChangeParams
 end
 
 "Read AMES model configuration file (in YAML syntax). Add or modify entries as needed."
-function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Bool = false)
+function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Bool = false, date_time_string::AbstractString = nothing)
     global_params = YAML.load_file(YAML_file)
 
     global_params["include-energy-sectors"] = include_energy_sectors
@@ -78,6 +78,9 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
         output_folder_name = string(global_params["output_folder"], "_full")
     else
         output_folder_name = global_params["output_folder"]
+    end
+    if !isnothing(date_time_string)
+        output_folder_name *= string("_", date_time_string)
     end
     global_params["results_path"] = joinpath("outputs/", output_folder_name, "results")
     global_params["calibration_path"] = joinpath("outputs/", output_folder_name, "calibration")

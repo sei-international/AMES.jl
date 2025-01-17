@@ -1,6 +1,7 @@
 The AMES Julia package is licensed under the Apache License, Version 2.0:
 
-> Copyright (c) 2018-2023: Stockholm Environment Institute U.S.
+> Copyright (c) 2018-2023: Stockholm Environment Institute
+> Copyright (c) 2024-2025: Stockholm Environment Institute and the University of Leeds
 >
 >
 >                                  Apache License

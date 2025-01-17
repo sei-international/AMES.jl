@@ -7,7 +7,8 @@ Authors:
   Emily Ghosh
   Anisha Nazareth
 
-Copyright ©2019-2022 Stockholm Environment Institute
+Copyright ©2019-2023 Stockholm Environment Institute
+Copyright ©2024-2025 Stockholm Environment Institute and University of Leeds
 =#
 
 "Main module for `AMES.jl` -- a macroeconomic model for LEAP"

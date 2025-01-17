@@ -18,7 +18,8 @@ function run(config_file::AbstractString = "AMES_params.yml";
              get_results_from_leap_version::Union{Nothing,Integer,AbstractString} = nothing,
              only_push_leap_results::Bool = false,
              run_number_start::Integer = 0,
-             continue_if_error::Bool = false)
+             continue_if_error::Bool = false,
+             add_timestamp::Bool = false)
 ```
 
 The options are:
@@ -29,10 +30,11 @@ The options are:
   * `get_results_from_leap_version`: Specify the LEAP version, either by comment or number, from which to pull initial results (ignored if `load_leap_first = false`);
   * `only_push_leap_results`: Run AMES and push results to LEAP, but do not run LEAP;
   * `run_number_start`: Specify the first run number to use (default is 0);
-  * `continue_if_error`: Try to continue if the linear goal program returns an error.
+  * `continue_if_error`: Try to continue if the linear goal program returns an error;
+  * `add_timestamp`: Add a date and time string to the name of the results folder (useful for before-and-after comparisons when changing a model).
 
 !!! info "When to use `continue_if_error`"
-    The `continue_if_error` flag should ordinarily be set to `false`. When there is an error, the results cannot be trusted, and some reported outputs and all LEAP indices are set to `NaN` (Not a Number). Nevertheless, it has some use. It is most useful when running AMES many times using different inputs; for example, during an automated calibration or when running an ensemble of LEAP scenarios. In that case, setting the flag to `true` _may_ enable calculations to proceed even if one particular run gives an error. However, there is a chance that the program will halt anyway, if the error is too severe to recover from.
+    The `continue_if_error` flag should ordinarily be set to `false`. When there is an error, the results cannot be trusted, and some reported outputs and all LEAP indices are set to `NaN` (Not a Number). Nevertheless, it has some uses. It is most useful when running AMES many times using different inputs; for example, during an automated calibration or when running an ensemble of LEAP scenarios. In that case, setting the flag to `true` _may_ enable calculations to proceed even if one particular run gives an error. However, there is a chance that the program will halt anyway, if the error is too severe to recover from.
 
 For example, each of the following is a valid call to the `run()` function:
 ```julia

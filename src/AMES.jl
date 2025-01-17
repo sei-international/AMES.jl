@@ -7,7 +7,8 @@ Authors:
   Emily Ghosh
   Anisha Nazareth
 
-Copyright ©2019-2022 Stockholm Environment Institute
+Copyright ©2019-2023 Stockholm Environment Institute
+Copyright ©2024-2025 Stockholm Environment Institute and University of Leeds
 =#
 
 "Main module for `AMES.jl` -- a macroeconomic model for LEAP"
@@ -23,16 +24,6 @@ export run
 
 """
 Run an AMES model as specified in `config_file`. If running from LEAP, set `include_energy_sectors` to `false` (the default).
-
-    run(config_file::AbstractString = "AMES_params.yml";
-			 dump_err_stack::Bool = false,
-			 include_energy_sectors::Bool = false,
-			 load_leap_first::Bool = false,
-			 get_results_from_leap_version::Union{Nothing,Integer,AbstractString} = nothing, # Only used if load_leap_first = true
-			 only_push_leap_results::Bool = false,
-			 run_number_start::Integer = 0,
-			 continue_if_error::Bool = false,
-			 add_timestamp::Bool = false)
 """
 function run(config_file::AbstractString = "AMES_params.yml";
 			 dump_err_stack::Bool = false,

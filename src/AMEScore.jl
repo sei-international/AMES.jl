@@ -1004,7 +1004,7 @@ function leapmacro(param_file::AbstractString,
 				   only_push_leap_results::Bool = false,
 				   run_number_start::Integer = 0,
 				   continue_if_error::Bool = false,
-				   date_time_string::AbstractString = nothing)
+				   date_time_string::Union{Nothing,AbstractString} = nothing)
 
     # Read in global parameters
     params = SUTlib.parse_param_file(param_file, include_energy_sectors = include_energy_sectors, date_time_string = date_time_string)

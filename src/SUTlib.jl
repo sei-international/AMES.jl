@@ -69,7 +69,7 @@ mutable struct TechChangeParams
 end
 
 "Read AMES model configuration file (in YAML syntax). Add or modify entries as needed."
-function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Bool = false, date_time_string::AbstractString = nothing)
+function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Bool = false, date_time_string::Union{Nothing,AbstractString} = nothing)
     global_params = YAML.load_file(YAML_file)
 
     global_params["include-energy-sectors"] = include_energy_sectors

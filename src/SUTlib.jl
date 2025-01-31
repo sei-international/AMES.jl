@@ -88,29 +88,44 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
 
     # Check that years are present
     if !AMESlib.haskeyvalue(global_params, "years")
-        throw(ErrorException(format(AMESlib.gettext("Configuration file must includes simulation years"))))
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include simulation years"))))
     else
         if !AMESlib.haskeyvalue(global_params["years"], "start") || !AMESlib.haskeyvalue(global_params["years"], "end")
             throw(ErrorException(format(AMESlib.gettext("Years must include both 'start' and 'end'"))))
         end
     end
-	# First, check if any sectors or products should be excluded because production is zero (or effectively zero, for products)
-	SUT_df = CSV.read(joinpath("inputs",global_params["files"]["SUT"]), header=false, DataFrame)
-	M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["imports"]), dims=2))
-	supply_table = AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["supply_table"])
-	qs = vec(sum(supply_table, dims=2))
-	g = vec(sum(supply_table, dims=1))
-    M_equiv = transpose(supply_table) * Diagonal(1 ./ (qs .+ AMESlib.ϵ)) * M
-    # Remove all sectors for which there is negligible domestic production relative to imports or where g = 0
-	θ = global_params["domestic_production_share_threshold"]/100
-	zero_domprod_ndxs = findall(x -> x <= 0, min(g, (1 - θ) * g - θ * M_equiv))
-    # Remove all products for which there is negligible total supply (domestic + imported) relative to total domestic output
-	zero_prod_ndxs = findall(x -> abs(x) < AMESlib.ϵ, (qs + M)/sum(g))
 
+    ## Sectors
 	all_sectors = CSV.read(joinpath("inputs",global_params["files"]["sector_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
 	all_products = CSV.read(joinpath("inputs",global_params["files"]["product_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
 	sector_codes = all_sectors[:code]
     product_codes = all_products[:code]
+
+    ## Supply-Use table
+	SUT_df = CSV.read(joinpath("inputs",global_params["files"]["SUT"]), header=false, DataFrame)
+    # The block must be present
+    if !AMESlib.haskeyvalue(global_params,"SUT_ranges")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include an SUT_ranges block"))))
+    end
+    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"supply_table")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the supply table in the SUT_ranges block"))))
+    else
+        supply_table = AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["supply_table"])
+        qs = vec(sum(supply_table, dims=2))
+        g = vec(sum(supply_table, dims=1))
+    end
+    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"imports")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for imports in the SUT_ranges block"))))
+    else
+        M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["imports"]), dims=2))
+    end
+
+    # Remove all sectors for which there is negligible domestic production relative to imports or where g = 0
+	θ = global_params["domestic_production_share_threshold"]/100
+    M_equiv = transpose(supply_table) * Diagonal(1 ./ (qs .+ AMESlib.ϵ)) * M
+	zero_domprod_ndxs = findall(x -> x <= 0, min(g, (1 - θ) * g - θ * M_equiv))
+    # Remove all products for which there is negligible total supply (domestic + imported) relative to total domestic output
+	zero_prod_ndxs = findall(x -> abs(x) < AMESlib.ϵ, (qs + M)/sum(g))
 
     # Get lists of excluded sectors other than energy, defaulting to empty list
     if !AMESlib.haskeyvalue(global_params, "excluded_sectors")

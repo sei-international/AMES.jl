@@ -620,7 +620,7 @@ function macro_main(params::Dict, leapvals::LEAPlib.LEAPresults, run_number::Int
 	        πw = (prices.pw - pw_prev) ./ pw_prev # exog.πw_base is a single value, applied to all products; this is by product
             πg = sum(g_share .* πb)
 			πF = sum(πb .* value.(F))/sum(value.(F))
-			π_imp = sum(πw .* value.(M))/sum(value.(M))
+			π_imp = sum(πw .* (value.(M) .+ AMESlib.ϵ))/(sum(value.(M)) + AMESlib.ϵ)
 			π_exp = sum(πw .* value.(X))/sum(value.(X))
 			π_trade = sum(πw .* (value.(X) + value.(M)))/sum(value.(X) + value.(M))
 			val_findmd = pb_prev .* (value.(X) + value.(F) + value.(I_supply) - value.(M))

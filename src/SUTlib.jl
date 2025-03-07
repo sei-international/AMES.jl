@@ -934,8 +934,12 @@ function energy_nonenergy_link_measure(params::Dict)
 	#--------------------------------
 	# Compute D matrix
 	#--------------------------------
-	use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[full_product_ndxs,full_sector_ndxs]
-	D = use_table * Diagonal(1.0 ./ (g .+ AMESlib.ϵ))
+    if !AMESlib.haskeyvalue(params["SUT_ranges"],"use_table")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the use table in the SUT_ranges block"))))
+    else
+        use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[full_product_ndxs,full_sector_ndxs]
+        D = use_table * Diagonal(1.0 ./ (g .+ AMESlib.ϵ))
+    end
 
 	#--------------------------------
 	# Compute A matrix and Leontief matrix
@@ -1007,7 +1011,11 @@ function process_sut(params::Dict)
 	retval.Vnorm = Diagonal(1 ./ retval.g) * V
 
 	# Get total supply column
-	tot_supply = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_supply"])[product_ndxs]
+	 if !AMESlib.haskeyvalue(params["SUT_ranges"],"tot_supply")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the total supply column (or columns, if summed together) in the SUT_ranges block"))))
+    else
+        tot_supply = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_supply"])[product_ndxs]
+    end
 
 	#--------------------------------
 	# Use table
@@ -1021,20 +1029,30 @@ function process_sut(params::Dict)
 	#--------------------------------
 	# Margins
 	#--------------------------------
-	margins = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[product_ndxs,:], dims=2))
-	margins_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[terr_adj_product_ndx,:])
-	# Calculate margin ratios
-    margins_pos = max.(margins, zeros(np))
-    margins_pos = margins_pos * (1.0 + margins_stat_adj/sum(margins_pos))
-    margins_neg = max.(-margins, zeros(np))
-    margins_neg = margins_neg * (1.0 - margins_stat_adj/sum(margins_neg))
+    if AMESlib.haskeyvalue(params["SUT_ranges"],"margins")
+        margins = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[product_ndxs,:], dims=2))
+        margins_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["margins"])[terr_adj_product_ndx,:])
+        # Calculate margin ratios
+        margins_pos = max.(margins, zeros(np))
+        margins_pos = margins_pos * (1.0 + margins_stat_adj/sum(margins_pos))
+        margins_neg = max.(-margins, zeros(np))
+        margins_neg = margins_neg * (1.0 - margins_stat_adj/sum(margins_neg))
+    else
+        margins = zeros(np)
+        margins_pos = zeros(np)
+        margins_neg = zeros(np)
+    end
 	retval.marg_pos_ratio = margins_pos ./ tot_supply
-	retval.marg_neg_share = margins_neg / sum(margins_neg)
+	retval.marg_neg_share = margins_neg / (sum(margins_neg) + AMESlib.ϵ)
 
 	#--------------------------------
 	# Taxes
 	#--------------------------------
-	taxes = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["taxes"])[product_ndxs,:], dims=2))
+    if AMESlib.haskeyvalue(params["SUT_ranges"],"taxes")
+        taxes = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["taxes"])[product_ndxs,:], dims=2))
+    else
+        taxes = zeros(np)
+    end
 
 	#--------------------------------
 	# Imports

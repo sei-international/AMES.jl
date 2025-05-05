@@ -33,8 +33,8 @@ The next block sets the start and end years for the simulation. When running wit
 #   Note: the supply-use table above must be appropriate for the start year
 #---------------------------------------------------------------------------
 years:
-    start:  2010
-    end:    2040
+    start:  2020
+    end:    2050
 ```
 
 ### [Required input files](@id config-required-input-files)
@@ -438,7 +438,7 @@ If this section is omitted, then results are sent to and retrieved from the scen
 # Core information for the LEAP application (optional)
 LEAP-info:
     # The last historical year (equal to LEAP's First Scenario Year - 1): if missing, it is set equal to the start year
-    last_historical_year: 2010
+    last_historical_year: 2020
     # This can be, e.g., a baseline scenario (alternatively, can specify input_scenario and result_scenario separately)
     scenario: Baseline
     # The region (if any -- can omit, or enter a "~", meaning no value)

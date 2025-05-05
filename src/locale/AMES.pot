@@ -15,11 +15,23 @@ msgstr ""
 msgid "Year"
 msgstr ""
 
-#: AMEScore.jl:1069
+#: SUTlib.jl:94
+msgid "Years must include both 'start' and 'end'"
+msgstr ""
+
+#: LEAPlib.jl:108
+msgid "All values were 'NaN'"
+msgstr ""
+
+#: AMEScore.jl:1070
 msgid "Results did not converge: {1:.2f}% > {2:.2f}% target..."
 msgstr ""
 
-#: SUTlib.jl:227
+#: SUTlib.jl:118
+msgid "Configuration file must include a range for the imports column (or columns, if summed together) in the SUT_ranges block"
+msgstr ""
+
+#: SUTlib.jl:253
 msgid "Parameter 'intrate_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
@@ -27,11 +39,11 @@ msgstr ""
 msgid "final demand"
 msgstr ""
 
-#: AMES.jl:69
+#: AMES.jl:80
 msgid "Configuration file: '{1}'"
 msgstr ""
 
-#: SUTlib.jl:744
+#: SUTlib.jl:778
 msgid "Year {1:d} is not in time series range {2:d}:{3:d}"
 msgstr ""
 
@@ -39,11 +51,11 @@ msgstr ""
 msgid "GDP gr"
 msgstr ""
 
-#: SUTlib.jl:219
+#: SUTlib.jl:245
 msgid "Parameter 'util_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
-#: SUTlib.jl:547
+#: SUTlib.jl:578
 msgid "Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
@@ -51,7 +63,7 @@ msgstr ""
 msgid "intermediate supply from non-energy sectors"
 msgstr ""
 
-#: AMEScore.jl:1054
+#: AMEScore.jl:1055
 msgid "AMES model run ({1})..."
 msgstr ""
 
@@ -59,7 +71,7 @@ msgstr ""
 msgid "exports"
 msgstr ""
 
-#: SUTlib.jl:540
+#: SUTlib.jl:569
 msgid "Exogenous potential output file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
@@ -71,19 +83,19 @@ msgstr ""
 msgid "positive margins"
 msgstr ""
 
-#: LEAPlib.jl:332
+#: LEAPlib.jl:359
 msgid "energy investment"
 msgstr ""
 
-#: SUTlib.jl:223
+#: SUTlib.jl:249
 msgid "Parameter 'profit_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
-#: AMEScore.jl:1086
+#: AMEScore.jl:1087
 msgid "Sending AMES output to LEAP..."
 msgstr ""
 
-#: AMEScore.jl:1025
+#: AMEScore.jl:1026
 msgid "Cannot connect to LEAP. Please check that LEAP is installed, or set 'run_leap: false' in the configuration file."
 msgstr ""
 
@@ -91,7 +103,11 @@ msgstr ""
 msgid "imports"
 msgstr ""
 
-#: AMESlib.jl:94
+#: SUTlib.jl:1133
+msgid "Configuration file must include a range for the wages row (or rows, if summed together) in the SUT_ranges block"
+msgstr ""
+
+#: AMESlib.jl:103
 msgid "Cell range '{1}' is not in the correct format (e.g., 'AB3:BG10')"
 msgstr ""
 
@@ -99,15 +115,23 @@ msgstr ""
 msgid "nominal xr index"
 msgstr ""
 
+#: SUTlib.jl:1020
+msgid "Configuration file must include a range for the use table in the SUT_ranges block"
+msgstr ""
+
 #: AMEScore.jl:429; AMEScore.jl:468
 msgid "calibration"
 msgstr ""
 
-#: AMEScore.jl:1093
+#: SUTlib.jl:1084
+msgid "Configuration file must include a range for the final demand column (or columns, if summed together) in the SUT_ranges block"
+msgstr ""
+
+#: AMEScore.jl:1094
 msgid "Running LEAP model..."
 msgstr ""
 
-#: SUTlib.jl:717
+#: SUTlib.jl:751
 msgid "Value for exchange rate missing in year {1:d}, with no default"
 msgstr ""
 
@@ -115,7 +139,7 @@ msgstr ""
 msgid "sector output"
 msgstr ""
 
-#: SUTlib.jl:1086
+#: SUTlib.jl:1176
 msgid "Measure of the significance to the economy of the supply of non-energy goods and services to the energy sector:"
 msgstr ""
 
@@ -127,35 +151,47 @@ msgstr ""
 msgid "domestic production"
 msgstr ""
 
-#: SUTlib.jl:836
+#: SUTlib.jl:877
 msgid "Exogenous prices file '{1}' does not contain all simulation years. Missing {2}."
+msgstr ""
+
+#: SUTlib.jl:1011
+msgid "Configuration file must include a range for the total supply column (or columns, if summed together) in the SUT_ranges block"
 msgstr ""
 
 #: AMEScore.jl:564
 msgid "real investment"
 msgstr ""
 
-#: AMEScore.jl:1059
+#: AMEScore.jl:1060
 msgid "completed"
+msgstr ""
+
+#: SUTlib.jl:108
+msgid "Configuration file must include an SUT_ranges block"
+msgstr ""
+
+#: SUTlib.jl:1142
+msgid "Configuration file must include a range for the total intermediate demand row (or rows, if summed together) in the SUT_ranges block"
 msgstr ""
 
 #: AMEScore.jl:565
 msgid "terms of trade index"
 msgstr ""
 
-#: AMESlib.jl:76
+#: AMESlib.jl:85
 msgid "Cell reference '{1}' is not in the correct format (e.g., 'AB3')"
 msgstr ""
 
-#: SUTlib.jl:847
+#: SUTlib.jl:888
 msgid "Product codes '{1}' in input file '{2}' not valid"
 msgstr ""
 
-#: AMES.jl:75
+#: AMES.jl:88
 msgid "AMES exited with an error: Please check the log file '{1}'"
 msgstr ""
 
-#: LEAPlib.jl:158
+#: LEAPlib.jl:186
 msgid "LEAP is not responding"
 msgstr ""
 
@@ -163,7 +199,7 @@ msgstr ""
 msgid "Running from {1} to {2}:"
 msgstr ""
 
-#: SUTlib.jl:554
+#: SUTlib.jl:587
 msgid "Exogenous real price file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
@@ -171,11 +207,15 @@ msgstr ""
 msgid "net exports to GDP ratio"
 msgstr ""
 
+#: SUTlib.jl:111
+msgid "Configuration file must include a range for the supply table in the SUT_ranges block"
+msgstr ""
+
 #: AMEScore.jl:565
 msgid "central bank rate"
 msgstr ""
 
-#: AMEScore.jl:1033; AMEScore.jl:1100
+#: AMEScore.jl:1034; AMEScore.jl:1101
 msgid "Obtaining LEAP results..."
 msgstr ""
 
@@ -183,11 +223,11 @@ msgstr ""
 msgid "model"
 msgstr ""
 
-#: AMEScore.jl:1047
+#: AMEScore.jl:1048
 msgid "With configuration file '{1}' (including energy sectors):"
 msgstr ""
 
-#: SUTlib.jl:791; SUTlib.jl:816
+#: SUTlib.jl:828; SUTlib.jl:855
 msgid "Sector codes '{1}' in input file '{2}' not valid"
 msgstr ""
 
@@ -195,15 +235,19 @@ msgstr ""
 msgid "Simulating for {1}: {2}"
 msgstr ""
 
-#: SUTlib.jl:1085
+#: SUTlib.jl:1108
+msgid "Configuration file must include a range for the total intermediate supply column (or columns, if summed together) in the SUT_ranges block"
+msgstr ""
+
+#: SUTlib.jl:1175
 msgid "This value should be small: {1:.2f}%."
 msgstr ""
 
-#: AMEScore.jl:1066
+#: AMEScore.jl:1067
 msgid "Convergence in run number {1} at {2:.2f}% ≤ {3:.2f}% target..."
 msgstr ""
 
-#: LEAPlib.jl:185
+#: LEAPlib.jl:211
 msgid "Encountered an error when running LEAP: {1}"
 msgstr ""
 
@@ -211,7 +255,7 @@ msgstr ""
 msgid "net exports"
 msgstr ""
 
-#: AMEScore.jl:1080
+#: AMEScore.jl:1081
 msgid "Hiding LEAP to improve performance..."
 msgstr ""
 
@@ -223,7 +267,11 @@ msgstr ""
 msgid "real GDP"
 msgstr ""
 
-#: SUTlib.jl:711
+#: SUTlib.jl:91
+msgid "Configuration file must include simulation years"
+msgstr ""
+
+#: SUTlib.jl:745
 msgid "Value for working age growth rate missing in year {1:d}, with no default"
 msgstr ""
 
@@ -231,23 +279,31 @@ msgstr ""
 msgid "negative margins"
 msgstr ""
 
+#: SUTlib.jl:1071
+msgid "Configuration file must include a range for the exports column (or columns, if summed together) in the SUT_ranges block"
+msgstr ""
+
 #: AMEScore.jl:564
 msgid "GDP deflator"
 msgstr ""
 
-#: LEAPlib.jl:372
+#: SUTlib.jl:1096
+msgid "Configuration file must include a range for the investment column (or columns, if summed together) in the SUT_ranges block"
+msgstr ""
+
+#: LEAPlib.jl:399
 msgid "Getting results from a LEAP version, but no temporary version to revert to"
 msgstr ""
 
-#: SUTlib.jl:432
+#: SUTlib.jl:458
 msgid "LEAP last historical year {1} is later than the end year {2}"
 msgstr ""
 
-#: SUTlib.jl:533
+#: SUTlib.jl:560
 msgid "Exogenous investment file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
-#: SUTlib.jl:780
+#: SUTlib.jl:817
 msgid "Exogenous potential output file '{1}' does not contain all simulation years. Missing {2}."
 msgstr ""
 
@@ -255,15 +311,15 @@ msgstr ""
 msgid "Loading data..."
 msgstr ""
 
-#: LEAPlib.jl:164
+#: LEAPlib.jl:192
 msgid "Cannot connect to LEAP: {1}"
 msgstr ""
 
-#: AMEScore.jl:1107
+#: AMEScore.jl:1108
 msgid "Restoring LEAP..."
 msgstr ""
 
-#: AMES.jl:49
+#: AMES.jl:53
 msgid "Configuration file '{1}' did not load properly: {2} on line {3:d}"
 msgstr ""
 
@@ -271,15 +327,15 @@ msgstr ""
 msgid "labor force gr"
 msgstr ""
 
-#: SUTlib.jl:429
+#: SUTlib.jl:455
 msgid "LEAP last historical year {1} is earlier than the start year {2}"
 msgstr ""
 
-#: SUTlib.jl:378
+#: SUTlib.jl:404
 msgid "Sector code '{1}' is listed in 'LEAP-potential-output' but is not included in the AMES model calculations"
 msgstr ""
 
-#: AMEScore.jl:1049
+#: AMEScore.jl:1050
 msgid "With configuration file '{1}':"
 msgstr ""
 
@@ -287,7 +343,7 @@ msgstr ""
 msgid "real xr index"
 msgstr ""
 
-#: AMEScore.jl:1031
+#: AMEScore.jl:1032
 msgid "Obtaining LEAP results from version '{1}'..."
 msgstr ""
 
@@ -295,11 +351,11 @@ msgstr ""
 msgid "capital-output ratio"
 msgstr ""
 
-#: SUTlib.jl:793; SUTlib.jl:818
+#: SUTlib.jl:830; SUTlib.jl:857
 msgid "Sector code '{1}' in input file '{2}' not valid"
 msgstr ""
 
-#: SUTlib.jl:849
+#: SUTlib.jl:890
 msgid "Product code '{1}' in input file '{2}' not valid"
 msgstr ""
 

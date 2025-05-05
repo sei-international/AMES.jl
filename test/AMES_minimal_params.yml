@@ -8,8 +8,8 @@ output_folder: Minimal
 #   Note: the supply-use table above must be appropriate for the start year
 #---------------------------------------------------------------------------
 years:
-    start:  2010
-    end:    2040
+    start:  2020
+    end:    2050
 
 #---------------------------------------------------------------------------
 # Supply-use table and supplementary tables as CSV files

@@ -404,6 +404,9 @@ domestic_production_share_threshold: 1.0 # percent
 ```
 
 The following section specifies where to find the data needed by AMES within the supply-use table (a `CSV` file). Ranges are specified in standard spreadsheet form.
+
+The following ranges are optional, and may be omitted or replaced with `~`: `margins` and `taxes`.
+
 ```yaml
 SUT_ranges:
     # Matrices arranged product (rows) x sector (columns)

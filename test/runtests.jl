@@ -55,6 +55,18 @@ end
 						load_leap_first = false,
 						include_energy_sectors = true,
 						add_timestamp = true) == 0
+	@test AMES.run("AMES_params_IO.yml",
+						dump_err_stack = true,
+						continue_if_error = false,
+						load_leap_first = false,
+						include_energy_sectors = true,
+						add_timestamp = true) == 0
+	@test AMES.run("AMES_params_IO.yml",
+						dump_err_stack = true,
+						continue_if_error = false,
+						load_leap_first = false,
+						include_energy_sectors = false,
+						add_timestamp = true) == 0
 	# @test AMES.run("AMES_params.yml",
 	# 					dump_err_stack = true,
 	# 					continue_if_error = false,

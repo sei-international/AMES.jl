@@ -108,22 +108,71 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     product_codes = all_products[:code]
 
     ## Supply-Use table
-	SUT_df = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["SUT"]), header=false, DataFrame)
-    # The block must be present
+    if AMESlib.haskeyvalue(global_params["files"], "SUT")
+	    SUT_df = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["SUT"]), header=false, DataFrame)
+        global_params["accounts-type"] = "SUT"
+    elseif AMESlib.haskeyvalue(global_params["files"], "IO")
+        SUT_df = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["IO"]), header=false, DataFrame)
+        global_params["accounts-type"] = "IO"
+    else
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include the name of a supply-use table (SUT) or input-output table (IO) in the files block"))))
+    end
+    # The SUT_ranges block must be present (it's called that even for an IO table)
     if !AMESlib.haskeyvalue(global_params,"SUT_ranges")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include an SUT_ranges block"))))
     end
-    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"supply_table")
-        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the supply table in the SUT_ranges block"))))
-    else
-        supply_table = AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["supply_table"])
-        qs = vec(sum(supply_table, dims=2))
-        g = vec(sum(supply_table, dims=1))
-    end
+
+    # Collect components of domestic supply and check that all are present
     if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"imports")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the imports column (or columns, if summed together) in the SUT_ranges block"))))
     else
         M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["imports"]), dims=2))
+        if AMESlib.haskeyvalue(global_params["files"], "IO")
+            M = -M # The convention for imports for the IO table is that it is negative
+        end
+    end
+    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"exports")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the exports column (or columns, if summed together) in the SUT_ranges block"))))
+    else
+        X = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["exports"]), dims=2))
+    end
+    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"final_demand")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the final demand column (or columns, if summed together) in the SUT_ranges block"))))
+    else
+        F = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["final_demand"]), dims=2))
+    end
+    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"investment")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the investment column (or columns, if summed together) in the SUT_ranges block"))))
+    else
+        I = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["investment"]), dims=2))
+    end
+    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"tot_intermediate_supply")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the total intermediate supply column (or columns, if summed together) in the SUT_ranges block"))))
+    else
+        tot_int_sup = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["tot_intermediate_supply"]), dims=2))
+    end
+    if AMESlib.haskeyvalue(global_params["SUT_ranges"],"stock_change")
+        stock_change = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["stock_change"]), dims=2))
+    else
+        stock_change = zeros(np)
+    end
+
+    if global_params["accounts-type"] == "SUT"
+        if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"supply_table")
+        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the supply table in the SUT_ranges block"))))
+        else
+            supply_table = AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["supply_table"])
+            qs = vec(sum(supply_table, dims=2))
+            g = vec(sum(supply_table, dims=1))
+        end
+    elseif global_params["accounts-type"] == "IO"
+        if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"io_table")
+            throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the IO table in the SUT_ranges block"))))
+        else
+            qs = M + F + X + I + tot_int_sup + stock_change
+            g = qs
+            supply_table = Diagonal(qs)
+        end
     end
 
     # Remove all sectors for which there is negligible domestic production relative to imports or where g = 0
@@ -132,6 +181,12 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
 	zero_domprod_ndxs = findall(x -> x <= 0, min(g, (1 - θ) * g - θ * M_equiv))
     # Remove all products for which there is negligible total supply (domestic + imported) relative to total domestic output
 	zero_prod_ndxs = findall(x -> abs(x) < AMESlib.ϵ, (qs + M)/sum(g))
+
+    # This is an option for symmetric IO matrices, to just have a single "excluded"
+    if AMESlib.haskeyvalue(global_params, "excluded")
+        global_params["excluded_sectors"] = global_params["excluded"]
+        global_params["excluded_products"] = global_params["excluded"]
+    end
 
     # Get lists of excluded sectors other than energy, defaulting to empty list
     if !AMESlib.haskeyvalue(global_params, "excluded_sectors")
@@ -926,21 +981,46 @@ function energy_nonenergy_link_measure(params::Dict)
 	full_product_ndxs = sort(vcat(params["product-indexes"],params["energy-product-indexes"]))
 	ns = length(full_sector_ndxs)
 
-	SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["SUT"]), header=false, DataFrame)
+    if params["accounts-type"] == "SUT"
+        SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["SUT"]), header=false, DataFrame)
+    elseif params["accounts-type"] == "IO"
+        SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["IO"]), header=false, DataFrame)
+    end
 
 	#--------------------------------
 	# Compute S matrix
 	#--------------------------------
-	supply_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[full_product_ndxs,full_sector_ndxs]
-	V = transpose(supply_table)
-	qs = vec(sum(V, dims=1))
-	g = vec(sum(V, dims=2))
+    if params["accounts-type"] == "SUT"
+	    supply_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[full_product_ndxs,full_sector_ndxs]
+        V = transpose(supply_table)
+        qs = vec(sum(V, dims=1))
+        g = vec(sum(V, dims=2))
+    elseif params["accounts-type"] == "IO"
+        M = -vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"]), dims=2))
+        X = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"]), dims=2))
+        F = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"]), dims=2))
+        I = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"]), dims=2))
+        tot_int_sup = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_supply"]), dims=2))
+        if AMESlib.haskeyvalue(params["SUT_ranges"],"stock_change")
+            stock_change = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["stock_change"]), dims=2))
+        else
+            stock_change = zeros(np)
+        end
+        qs = M + X + F + I + tot_int_sup + stock_change
+        g = qs
+        V = Diagonal(qs)
+    end
+
 	S = V * Diagonal(1.0 ./ (qs .+ AMESlib.ϵ))
 
 	#--------------------------------
 	# Compute D matrix
 	#--------------------------------
-    use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[full_product_ndxs,full_sector_ndxs]
+    if params["accounts-type"] == "SUT"
+        use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[full_product_ndxs,full_sector_ndxs]
+    elseif params["accounts-type"] == "IO"
+        use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["io_table"])[full_product_ndxs,full_sector_ndxs]
+    end
     D = use_table * Diagonal(1.0 ./ (g .+ AMESlib.ϵ))
 
 	#--------------------------------
@@ -1000,16 +1080,89 @@ function process_sut(params::Dict)
 
     energy_product_ndxs = params["energy-product-indexes"]
 
-    SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["SUT"]), header=false, DataFrame)
+    if params["accounts-type"] == "SUT"
+        SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["SUT"]), header=false, DataFrame)
+    elseif params["accounts-type"] == "IO"
+        SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["IO"]), header=false, DataFrame)
+    end
+
+    # Note: The existence of the imports, exports, etc. keys is checked in parse_param_file()
+	#--------------------------------
+	# Imports
+	#--------------------------------
+	M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[product_ndxs,:], dims=2))
+    if params["accounts-type"] == "IO"
+        M = -M # The convention in the IO table is that imports are negative
+    end
+	M_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[terr_adj_product_ndx,:])
+    M = M * (1.0 + M_stat_adj/(sum(M) + AMESlib.ϵ))
+    M[params["non-tradeable-range"]] .= 0.0 # If it is declared non-tradeable, set imports to zero
+	retval.M = M
+
+	#--------------------------------
+	# Exports -- will be adjusted later
+	#--------------------------------
+    X = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[product_ndxs,:], dims=2))
+    X_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[terr_adj_product_ndx,:])
+    X = X * (1.0 + X_stat_adj/(sum(X) + AMESlib.ϵ))
+    X[params["non-tradeable-range"]] .= 0.0 # If it is declared non-tradeable, set exports to zero
+    retval.X = X
+
+	#--------------------------------
+	# Final demand -- will be adjusted later
+	#--------------------------------
+    F = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[product_ndxs,:], dims=2))
+    F_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[terr_adj_product_ndx,:])
+    F = F * (1.0 + F_stat_adj/(sum(F) + AMESlib.ϵ))
+    retval.F = F
+
+	#--------------------------------
+	# Investment -- will be adjusted later
+	#--------------------------------
+    I = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[product_ndxs,:], dims=2))
+    I_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[terr_adj_product_ndx,:])
+    I = I * (1.0 + I_stat_adj/(sum(I) + AMESlib.ϵ))
+    retval.I = I
+
+	#--------------------------------
+	# Allocate imports (by a common fraction for each product) to final demand and intermediate demand
+	#--------------------------------
+    tot_int_sup = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_supply"])[product_ndxs,:], dims=2))
+    # The fraction m_frac applies to imports excluding imported investment goods
+    retval.m_frac = retval.M ./ (tot_int_sup + retval.F + retval.I .+ AMESlib.ϵ)
+
+	#--------------------------------
+	# Correct demands for stock changes and tax leakage
+	#--------------------------------
+    if AMESlib.haskeyvalue(params["SUT_ranges"],"stock_change")
+        stock_change = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["stock_change"])[product_ndxs,:], dims=2))
+    else
+        stock_change = zeros(np)
+    end
+    if AMESlib.haskeyvalue(params["SUT_ranges"],"taxes")
+        taxes = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["taxes"])[product_ndxs,:], dims=2))
+    else
+        taxes = zeros(np)
+    end
+    corr = 1 .+ (stock_change - taxes) ./ (retval.F + retval.I + retval.X .+ AMESlib.ϵ)
+    retval.F = corr .* retval.F
+    retval.X = corr .* retval.X
+    retval.I = corr .* retval.I
 
 	#--------------------------------
 	# Supply table
 	#--------------------------------
-	supply_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[product_ndxs,sector_ndxs]
-	V = transpose(supply_table)
-	qs = vec(sum(V, dims=1))
+    if params["accounts-type"] == "SUT"
+	    supply_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])[product_ndxs,sector_ndxs]
+        V = transpose(supply_table)
+        qs = vec(sum(V, dims=1))
+        retval.g = vec(sum(V, dims=2))
+    elseif params["accounts-type"] == "IO"
+        qs = M + X + F + I + tot_int_sup + stock_change
+        retval.g = qs
+        V = Diagonal(qs)
+    end
 	retval.S = V * Diagonal(1 ./ (qs .+ AMESlib.ϵ))
-    retval.g = vec(sum(V, dims=2))
 	retval.Vnorm = Diagonal(1 ./ retval.g) * V
 
 	# Get total supply column
@@ -1022,14 +1175,26 @@ function process_sut(params::Dict)
 	#--------------------------------
 	# Use table
 	#--------------------------------
-    if !AMESlib.haskeyvalue(params["SUT_ranges"],"use_table")
-        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the use table in the SUT_ranges block"))))
-    else
-        use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[product_ndxs,sector_ndxs]
-        retval.D = use_table * Diagonal(1.0 ./ (retval.g .+ AMESlib.ϵ))
-        # For pricing algorithm, keep track of energy cost share if energy sectors are excluded (e.g., when running together with LEAP)
-        energy_use = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[energy_product_ndxs,sector_ndxs], dims=1))
-        retval.energy_share = energy_use ./ (retval.g .+ AMESlib.ϵ)
+    if params["accounts-type"] == "SUT"
+        if !AMESlib.haskeyvalue(params["SUT_ranges"],"use_table")
+            throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the use table in the SUT_ranges block"))))
+        else
+            use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[product_ndxs,sector_ndxs]
+            retval.D = use_table * Diagonal(1.0 ./ (retval.g .+ AMESlib.ϵ))
+            # For pricing algorithm, keep track of energy cost share if energy sectors are excluded (e.g., when running together with LEAP)
+            energy_use = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["use_table"])[energy_product_ndxs,sector_ndxs], dims=1))
+            retval.energy_share = energy_use ./ (retval.g .+ AMESlib.ϵ)
+        end
+    elseif params["accounts-type"] == "IO"
+        if !AMESlib.haskeyvalue(params["SUT_ranges"],"io_table")
+            throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the IO table in the SUT_ranges block"))))
+        else
+            use_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["io_table"])[product_ndxs,sector_ndxs]
+            retval.D = use_table * Diagonal(1.0 ./ (retval.g .+ AMESlib.ϵ))
+            # For pricing algorithm, keep track of energy cost share if energy sectors are excluded (e.g., when running together with LEAP)
+            energy_use = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["io_table"])[energy_product_ndxs,sector_ndxs], dims=1))
+            retval.energy_share = energy_use ./ (retval.g .+ AMESlib.ϵ)
+        end
     end
 
 	#--------------------------------
@@ -1050,87 +1215,6 @@ function process_sut(params::Dict)
     end
 	retval.marg_pos_ratio = margins_pos ./ tot_supply
 	retval.marg_neg_share = margins_neg / (sum(margins_neg) + AMESlib.ϵ)
-
-	#--------------------------------
-	# Taxes
-	#--------------------------------
-    if AMESlib.haskeyvalue(params["SUT_ranges"],"taxes")
-        taxes = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["taxes"])[product_ndxs,:], dims=2))
-    else
-        taxes = zeros(np)
-    end
-
-	#--------------------------------
-	# Imports
-	#--------------------------------
-    # Note: The existence of the 'imports' key is checked in parse_param_file()
-	M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[product_ndxs,:], dims=2))
-	M_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"])[terr_adj_product_ndx,:])
-    M = M * (1.0 + M_stat_adj/(sum(M) + AMESlib.ϵ))
-    M[params["non-tradeable-range"]] .= 0.0 # If it is declared non-tradeable, set imports to zero
-	retval.M = M
-
-	#--------------------------------
-	# Exports -- will be adjusted later
-	#--------------------------------
-    if !AMESlib.haskeyvalue(params["SUT_ranges"],"exports")
-        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the exports column (or columns, if summed together) in the SUT_ranges block"))))
-    else
-        X = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[product_ndxs,:], dims=2))
-        X_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"])[terr_adj_product_ndx,:])
-        X = X * (1.0 + X_stat_adj/(sum(X) + AMESlib.ϵ))
-        X[params["non-tradeable-range"]] .= 0.0 # If it is declared non-tradeable, set exports to zero
-        retval.X = X
-    end
-
-	#--------------------------------
-	# Final demand -- will be adjusted later
-	#--------------------------------
-    if !AMESlib.haskeyvalue(params["SUT_ranges"],"final_demand")
-        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the final demand column (or columns, if summed together) in the SUT_ranges block"))))
-    else
-        F = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[product_ndxs,:], dims=2))
-        F_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"])[terr_adj_product_ndx,:])
-        F = F * (1.0 + F_stat_adj/(sum(F) + AMESlib.ϵ))
-        retval.F = F
-    end
-
-	#--------------------------------
-	# Investment -- will be adjusted later
-	#--------------------------------
-    if !AMESlib.haskeyvalue(params["SUT_ranges"],"investment")
-        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the investment column (or columns, if summed together) in the SUT_ranges block"))))
-    else
-        I = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[product_ndxs,:], dims=2))
-        I_stat_adj = sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"])[terr_adj_product_ndx,:])
-        I = I * (1.0 + I_stat_adj/(sum(I) + AMESlib.ϵ))
-        retval.I = I
-    end
-
-	#--------------------------------
-	# Allocate imports (by a common fraction for each product) to final demand and intermediate demand
-	#--------------------------------
-    if !AMESlib.haskeyvalue(params["SUT_ranges"],"tot_intermediate_supply")
-        throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the total intermediate supply column (or columns, if summed together) in the SUT_ranges block"))))
-    else
-        tot_int_sup = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_supply"])[product_ndxs,:], dims=2))
-        # The fraction m_frac applies to imports excluding imported investment goods
-        retval.m_frac = retval.M ./ (tot_int_sup + retval.F + retval.I .+ AMESlib.ϵ)
-    end
-
-	#--------------------------------
-	# Correct demands
-	#--------------------------------
-    if AMESlib.haskeyvalue(params["SUT_ranges"],"stock_change")
-        stock_change = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["stock_change"])[product_ndxs,:], dims=2))
-    else
-        stock_change = zeros(np)
-    end
-    # Correct for stock changes and tax leakage
-    corr = 1 .+ (stock_change - taxes) ./ (retval.F + retval.I + retval.X .+ AMESlib.ϵ)
-    retval.F = corr .* retval.F
-    retval.X = corr .* retval.X
-    retval.I = corr .* retval.I
 
 	#--------------------------------
 	# Wages

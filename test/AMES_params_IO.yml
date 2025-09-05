@@ -1,0 +1,318 @@
+#---------------------------------------------------------------------------
+# Folder inside the "outputs" folder to store calibration, results, and diagnostics
+#---------------------------------------------------------------------------
+input_folder: Standard-IO
+output_folder: Baseline-IO
+
+#---------------------------------------------------------------------------
+# Start and end years for the simulation
+#   Note: the supply-use table above must be appropriate for the start year
+#---------------------------------------------------------------------------
+years:
+    start:  2020
+    end:    2050
+
+#---------------------------------------------------------------------------
+# Supply-use table and supplementary tables as CSV files
+#---------------------------------------------------------------------------
+# AMES model data files
+files:
+    IO: Freedonia_IO.csv
+    sector_info: sector_parameters.csv
+    product_info: product_parameters.csv
+    time_series: time_series.csv
+    xr-is-real: false
+
+# Say whether to clear the contents of the results, calibration, and diagnostic folders before the run
+clear-folders:
+    results: true
+    calibration: true
+    diagnostics: true
+# Set to "true" to send results to the diagnostics folder, including dumps of the linear goal program
+report-diagnostics: true
+
+model:
+    # Set run_leap to "false" to do a single run of the AMES model without calling LEAP
+    run_leap: false
+    # Hide LEAP while running to (possibly) improve performance
+    hide_leap: false
+    # Maximum number of iterations before stopping (ignored if run_leap = false)
+    max_runs: 7
+    # Tolerance in percentage difference between values for indices between runs
+    max_tolerance: 1.0 # percent
+
+#---------------------------------------------------------------------------
+# Optional input files for exogenous time series (CSV files)
+#---------------------------------------------------------------------------
+# Uncomment the lines below to use the files included in the Freedonia sample model
+# For pot_output and max_utilization, include only those sectors where values are constrained -- the others will be unconstrained
+# For real_price:
+#   * Include only those products where values are specified -- for others the real price will be held constant
+#   * Prices for non-tradeables will be ignored; they are calculated internally by AMES
+exog-files:
+    investment: ~ # Time series of exogenous investment demand, additional to that simulated by the model
+    pot_output: ~ # Potential output (any units -- it is applied as an index): sectors label columns; years label rows
+    max_utilization: ~ # Maximum capacity utilization: sectors label columns; years label rows (must lie between 0 and 1)
+    real_price: ~ # Real prices for tradeables (any units -- it is applied as an index): products label columns; years label rows
+
+#---------------------------------------------------------------------------
+# Adjustment parameters for initializing variables
+#---------------------------------------------------------------------------
+# These factors are expressed as a fractional addition/subtraction to the estimate: set to zero to accept the default estimate
+calib:
+    # Calibration factor for estimating the first-period profit rate and capital productivity
+    nextper_inv_adj_factor: 0.00
+    # Adjustment factor for maximum export demand in the initial year
+    max_export_adj_factor: 0.00
+    # Adjustment factor for maximum household demand in the initial year
+    max_hh_dmd_adj_factor: 0.00
+    # Potential output relative to actual output in the base year
+    pot_output_adj_factor: 0.05
+    
+#---------------------------------------------------------------------------
+# Global economy parameters
+#---------------------------------------------------------------------------
+global-params:
+    # Default world inflation rate
+    infl_default: 0.02
+    # Default world growth rate
+    gr_default: 0.015
+
+#---------------------------------------------------------------------------
+# Parameters for setting the central bank lending rate (Taylor rule)
+#---------------------------------------------------------------------------
+taylor-fcn:
+    # Allowable range for neutral growth
+    neutral_growth_band: [0.02, 0.06]
+    # Target interest rate (as a fraction, e.g., 2%/year = 0.02)
+    target_intrate:
+        init: 0.04
+        band: [0.01, 0.10]
+        xr_sens: 1
+        adj_time: 2 # years
+    # Target inflation rate (if missing or if value set to "~", will use global inflation rate)
+    target_infl: 0.02
+    # Initial inflation rate for domestic prices (if missing, or if value set to "~", will use target inflation rate)
+    init_infl: 0.04
+    # Response of the central bank rate to a change in the GDP growth rate
+    gr_resp: 0.50
+    # Response of the central bank rate to a change in the inflation rate
+    infl_resp: 0.50
+
+#---------------------------------------------------------------------------
+# Parameters for the investment function
+#---------------------------------------------------------------------------
+investment-fcn:
+    # Starting point for the autonomous investment growth rate: also the initial target GDP growth rate for the Taylor rule
+    init_neutral_growth: 0.060
+    # Change in induced investment with a change in utilization
+    util_sens:  0.07
+    # Change in induced investment with a change in the profit rate
+    profit_sens: 0.05
+    # The profit rate is based on realized profits by default; leave blank or set to true for profits at full capacity utilization
+    use_profits_at_full_capacity: false
+    # Change in induced investment with a change in the central bank lending rate
+    intrate_sens: 0.20
+    # Change in induced investment with a change in the current account-to-GDP ratio
+    net_export: 0.00
+    # Rate of adjustment of the autonomous investment rate towards the actual investment rate
+    growth_adj: 0.10
+
+#---------------------------------------------------------------------------
+# Parameters for labor productivity, labor force, and wages
+#---------------------------------------------------------------------------
+labor-prod-fcn:
+    # Flag for whether to apply Kaldor-Verdoorn model
+    use_KV_model: true
+    # Flag for whether to use sector parameters
+    use_sector_params_if_available: true
+    # Default labor productivity growth
+    labor_prod_gr_default: 0.025
+    # Default Kaldor-Verdoorn coefficient
+    KV_coeff_default: 0.500
+    # Default Kaldor-Verdoorn intercept
+    KV_intercept_default: 0.005
+wage-fcn:
+    # Inflation pass-through (wage indexing coefficient)
+    infl_passthrough: 1.00
+    # Labor supply constraint coefficient
+    lab_constr_coeff: 0.50
+
+#---------------------------------------------------------------------------
+# Parameter for rate of change in technical parameters
+#---------------------------------------------------------------------------
+tech-param-change:
+    # Flag to say whether to calculate changing technical parameters
+    calculate: false
+    # Flag for whether to use sector parameters
+    use_sector_params_if_available: true
+    # Rate constant
+    rate_constant_default: 1.5 # 1/year
+    # Exponent in the technical change function
+    exponent_default: 2.0
+
+#---------------------------------------------------------------------------
+# Demand model parameters
+#---------------------------------------------------------------------------
+# For exports, with respect to world GDP
+export_elast_demand:
+    decay: 0.01
+    
+# For final demand, with respect to the wage bill
+wage_elast_demand:
+    decay: 0.01
+    engel_prods: [agric, foodpr]
+    engel_asympt_elast: 0.7
+
+#---------------------------------------------------------------------------
+# Paramters for implementing the (goal program) obective function
+#---------------------------------------------------------------------------
+objective-fcn:
+    # Category weights on deviations from normal levels
+    category_weights:
+        utilization: 8.00
+        final_demand_cov: 4.00
+        exports_cov: 2.00
+        imports_cov: 1.00
+    # Product & sector weights are defined by: φ * value share + (1 - φ) * 1/number of sectors or products; this is φ
+    product_sector_weight_factors:
+        utilization: 0.5
+        final_demand_cov: 0.5
+        exports_cov: 0.5
+
+#---------------------------------------------------------------------------
+# Structure of the input-output table
+#---------------------------------------------------------------------------
+excluded:
+    energy: [coal, petr, util]
+    territorial_adjustment: []
+    others: []
+    
+non_tradeable_products: [constr, comm]
+
+# Domestic production as a % share of the total of imports and domestic production must exceed this value
+domestic_production_share_threshold: 1.0 # percent
+    
+SUT_ranges:
+    # Symmetric input-output matrix
+    io_table: C2:P15
+    # Columns -- groups of columns will be summed together
+    tot_supply: Q2:Q15
+    imports: S2:S15 # Entries must be negative for an IO table
+    exports: R2:R15
+    final_demand: T2:V15
+    investment: W2:W15
+    stock_change: X2:X15
+    tot_intermediate_supply: Q2:Q15
+    # Rows indexed by sector -- groups of rows will be summed together
+    tot_intermediate_demand: C16:P16
+    wages: C18:P18
+
+#---------------------------------------------------------------------------
+# Parameters for running LEAP with the AMES model
+#---------------------------------------------------------------------------
+# Core information for the LEAP application (optional)
+LEAP-info:
+    # The last historical year (equal to LEAP's First Scenario Year - 1): if missing, it is set equal to the start year
+    last_historical_year: 2020
+    # This can be, e.g., a baseline scenario (alternatively, can specify input_scenario and result_scenario separately)
+    scenario: Baseline
+    # The region (if any -- can omit, or enter a "~", meaning no value)
+    region: ~
+
+LEAP-investment:
+    # Currency units for investment costs
+    inv_costs_unit: U.S. Dollar
+    # Scaling factor for investment costs (values are divided by this number, e.g., for thousands use 1000 or 1.0e+3)
+    inv_costs_scale: 1.0e+6
+    # Say whether to apply the nominal exchange rate to investment costs (e.g., if investment costs are in USD, but the SUT is in domestic currency)
+    inv_costs_apply_xr: false
+    # Exclude any investment branches that contain any of the text in the list (case-insensitive)
+    excluded_branches: []
+    distribute_costs_over:
+        default: 5 # years: This will be rounded to an integer
+        by_branch:
+            - {
+                path: Transformation\Electricity Generation\Processes\Existing Hydro,
+                value: 10 # years: This will be rounded to an integer
+            }
+            - {
+                path: Transformation\Electricity Generation\Processes\New Oil Combustion Turbine,
+                value: [10, 20, 20, 20, 10, 10, 5, 5] # percent by years: This will be re-scaled so it sums to 1.0
+            }
+
+# Association between AMES's GDP result and LEAP (optional)
+GDP-branch:
+    name: GDP
+    branch: Key\GDP
+    variable: Activity Level
+
+# Association between AMES's employment result and LEAP (optional)
+Employment-branch:
+    name: Employment
+    branch: Key\Employment
+    variable: Activity Level
+
+# Association between AMES sectors and LEAP sectors (optional)
+LEAP-drivers:
+    options:
+        PROD: production
+        VA: value added
+    default: PROD
+LEAP-sectors:
+ - {
+    name: Iron and Steel,
+    codes: [ironstl],
+    branches: [
+        {
+         branch: Demand\Industry\Iron and Steel,
+         variable: Activity Level
+        }
+    ]
+   }
+ - {
+    name: Pulp and Paper,
+    codes: [pulppr],
+    branches: [
+        {
+         branch: Demand\Industry\Pulp and Paper,
+         variable: Activity Level
+        }
+    ]
+   }
+ - {
+    name: Other Industry,
+    codes: [foodpr, hvymach, othind],
+    branches: [
+        {
+         branch: Demand\Industry\Other Industry,
+         variable: Activity Level
+        }
+    ]
+   }
+ - {
+    name: Transport,
+    codes: [transp],
+    driver: VA,
+    branches: [
+        {
+         branch: Demand\Transport\Freight,
+         variable: Activity Level
+        }
+    ]
+   }
+ - {
+    name: Commercial,
+    codes: [comm, othsrv],
+    driver: VA,
+    branches: [
+        {
+         branch: Demand\Commercial,
+         variable: Activity Level
+        }
+    ]
+   }
+
+LEAP-potential-output: []
+
+LEAP-prices: []

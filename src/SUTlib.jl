@@ -72,6 +72,12 @@ end
 function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Bool = false, date_time_string::Union{Nothing,AbstractString} = nothing)
     global_params = YAML.load_file(YAML_file)
 
+    if AMESlib.haskeyvalue(global_params, "input_folder")
+        global_params["input_folder"] = joinpath("inputs/", global_params["input_folder"])
+    else
+        global_params["input_folder"] = "inputs/"
+    end
+
     global_params["include-energy-sectors"] = include_energy_sectors
 
     if include_energy_sectors
@@ -96,13 +102,13 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     end
 
     ## Sectors
-	all_sectors = CSV.read(joinpath("inputs",global_params["files"]["sector_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
-	all_products = CSV.read(joinpath("inputs",global_params["files"]["product_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
+	all_sectors = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["sector_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
+	all_products = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["product_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
 	sector_codes = all_sectors[:code]
     product_codes = all_products[:code]
 
     ## Supply-Use table
-	SUT_df = CSV.read(joinpath("inputs",global_params["files"]["SUT"]), header=false, DataFrame)
+	SUT_df = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["SUT"]), header=false, DataFrame)
     # The block must be present
     if !AMESlib.haskeyvalue(global_params,"SUT_ranges")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include an SUT_ranges block"))))
@@ -286,7 +292,7 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     global_params["labor-prod-fcn"]["use_sector_params"] = false
     if global_params["labor-prod-fcn"]["use_sector_params_if_available"]
         # Check whether sectoral values are specified
-        sector_info_df = CSV.read(joinpath("inputs", global_params["files"]["sector_info"]), DataFrame)
+        sector_info_df = CSV.read(joinpath(global_params["input_folder"], global_params["files"]["sector_info"]), DataFrame)
         if hasproperty(sector_info_df, :empl0) && sum(ismissing.(sector_info_df.empl0)) == 0 # Check that full employment data are present (no defaults)
             if global_params["labor-prod-fcn"]["use_KV_model"]
                 global_params["labor-prod-fcn"]["use_sector_params"] = hasproperty(sector_info_df, :KV_coeff) && hasproperty(sector_info_df, :KV_intercept)
@@ -535,9 +541,9 @@ function get_var_params(params::Dict)
     prod_ndxs = params["product-indexes"]
 
     # Read in info from CSV files
-    sector_info = CSV.read(joinpath("inputs",params["files"]["sector_info"]), DataFrame)
-    product_info = CSV.read(joinpath("inputs",params["files"]["product_info"]), DataFrame)
-    time_series = CSV.read(joinpath("inputs",params["files"]["time_series"]), DataFrame)
+    sector_info = CSV.read(joinpath(params["input_folder"],params["files"]["sector_info"]), DataFrame)
+    product_info = CSV.read(joinpath(params["input_folder"],params["files"]["product_info"]), DataFrame)
+    time_series = CSV.read(joinpath(params["input_folder"],params["files"]["time_series"]), DataFrame)
     prod_codes = product_info[prod_ndxs,:code]
 
     # Catch if the "xr-is-normal" flag is present or not, default to false
@@ -554,8 +560,8 @@ function get_var_params(params::Dict)
         file_list = params["exog-files"]
         if AMESlib.haskeyvalue(file_list, "investment")
             for f in AMESlib.stringvec(file_list["investment"])
-                if isfile(joinpath("inputs", f))
-                    push!(investment_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                if isfile(joinpath(params["input_folder"], f))
+                    push!(investment_df_vec, CSV.read(joinpath(params["input_folder"], f), DataFrame))
                 else
                     @warn format(AMESlib.gettext("Exogenous investment file '{1}' does not exist in the 'inputs' folder"), f)
                 end
@@ -563,8 +569,8 @@ function get_var_params(params::Dict)
         end
         if AMESlib.haskeyvalue(file_list, "pot_output")
             for f in AMESlib.stringvec(file_list["pot_output"])
-                if isfile(joinpath("inputs", f))
-                    push!(pot_output_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                if isfile(joinpath(params["input_folder"], f))
+                    push!(pot_output_df_vec, CSV.read(joinpath(params["input_folder"], f), DataFrame))
                 else
                     @warn format(AMESlib.gettext("Exogenous potential output file '{1}' does not exist in the 'inputs' folder"), f)
                 end
@@ -572,8 +578,8 @@ function get_var_params(params::Dict)
         end
         if AMESlib.haskeyvalue(file_list, "max_utilization")
             for f in AMESlib.stringvec(file_list["max_utilization"])
-                if isfile(joinpath("inputs", f))
-                    push!(max_util_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                if isfile(joinpath(params["input_folder"], f))
+                    push!(max_util_df_vec, CSV.read(joinpath(params["input_folder"], f), DataFrame))
                 else
                     @warn format(AMESlib.gettext("Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"), f)
                 end
@@ -581,8 +587,8 @@ function get_var_params(params::Dict)
         end
         if AMESlib.haskeyvalue(file_list, "real_price")
             for f in AMESlib.stringvec(file_list["real_price"])
-                if isfile(joinpath("inputs", f))
-                    push!(real_price_df_vec, CSV.read(joinpath("inputs", f), DataFrame))
+                if isfile(joinpath(params["input_folder"], f))
+                    push!(real_price_df_vec, CSV.read(joinpath(params["input_folder"], f), DataFrame))
                 else
                     @warn format(AMESlib.gettext("Exogenous real price file '{1}' does not exist in the 'inputs' folder"), f)
                 end
@@ -920,7 +926,7 @@ function energy_nonenergy_link_measure(params::Dict)
 	full_product_ndxs = sort(vcat(params["product-indexes"],params["energy-product-indexes"]))
 	ns = length(full_sector_ndxs)
 
-	SUT_df = CSV.read(joinpath("inputs",params["files"]["SUT"]), header=false, DataFrame)
+	SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["SUT"]), header=false, DataFrame)
 
 	#--------------------------------
 	# Compute S matrix
@@ -994,7 +1000,7 @@ function process_sut(params::Dict)
 
     energy_product_ndxs = params["energy-product-indexes"]
 
-    SUT_df = CSV.read(joinpath("inputs",params["files"]["SUT"]), header=false, DataFrame)
+    SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["SUT"]), header=false, DataFrame)
 
 	#--------------------------------
 	# Supply table

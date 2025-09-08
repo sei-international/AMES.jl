@@ -70,103 +70,103 @@ end
 
 "Read AMES model configuration file (in YAML syntax). Add or modify entries as needed."
 function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Bool = false, date_time_string::Union{Nothing,AbstractString} = nothing)
-    global_params = YAML.load_file(YAML_file)
+    params = YAML.load_file(YAML_file)
 
-    if AMESlib.haskeyvalue(global_params, "input_folder")
-        global_params["input_folder"] = joinpath("inputs/", global_params["input_folder"])
+    if AMESlib.haskeyvalue(params, "input_folder")
+        params["input_folder"] = joinpath("inputs/", params["input_folder"])
     else
-        global_params["input_folder"] = "inputs/"
+        params["input_folder"] = "inputs/"
     end
 
-    global_params["include-energy-sectors"] = include_energy_sectors
+    params["include-energy-sectors"] = include_energy_sectors
 
     if include_energy_sectors
-        output_folder_name = string(global_params["output_folder"], "_full")
+        output_folder_name = string(params["output_folder"], "_full")
     else
-        output_folder_name = global_params["output_folder"]
+        output_folder_name = params["output_folder"]
     end
     if !isnothing(date_time_string)
         output_folder_name *= string("_", date_time_string)
     end
-    global_params["results_path"] = joinpath("outputs/", output_folder_name, "results")
-    global_params["calibration_path"] = joinpath("outputs/", output_folder_name, "calibration")
-    global_params["diagnostics_path"] = joinpath("outputs/", output_folder_name, "diagnostics")
+    params["results_path"] = joinpath("outputs/", output_folder_name, "results")
+    params["calibration_path"] = joinpath("outputs/", output_folder_name, "calibration")
+    params["diagnostics_path"] = joinpath("outputs/", output_folder_name, "diagnostics")
 
     # Check that years are present
-    if !AMESlib.haskeyvalue(global_params, "years")
+    if !AMESlib.haskeyvalue(params, "years")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include simulation years"))))
     else
-        if !AMESlib.haskeyvalue(global_params["years"], "start") || !AMESlib.haskeyvalue(global_params["years"], "end")
+        if !AMESlib.haskeyvalue(params["years"], "start") || !AMESlib.haskeyvalue(params["years"], "end")
             throw(ErrorException(format(AMESlib.gettext("Years must include both 'start' and 'end'"))))
         end
     end
 
     ## Sectors
-	all_sectors = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["sector_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
-	all_products = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["product_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
+	all_sectors = CSV.read(joinpath(params["input_folder"],params["files"]["sector_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
+	all_products = CSV.read(joinpath(params["input_folder"],params["files"]["product_info"]), header=1, types=Dict(:code => String, :name => String), select=[:code,:name], NamedTuple)
 	sector_codes = all_sectors[:code]
     product_codes = all_products[:code]
 
     ## Supply-Use table
-    if AMESlib.haskeyvalue(global_params["files"], "SUT")
-	    SUT_df = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["SUT"]), header=false, DataFrame)
-        global_params["accounts-type"] = "SUT"
-    elseif AMESlib.haskeyvalue(global_params["files"], "IO")
-        SUT_df = CSV.read(joinpath(global_params["input_folder"],global_params["files"]["IO"]), header=false, DataFrame)
-        global_params["accounts-type"] = "IO"
+    if AMESlib.haskeyvalue(params["files"], "SUT")
+	    SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["SUT"]), header=false, DataFrame)
+        params["accounts-type"] = "SUT"
+    elseif AMESlib.haskeyvalue(params["files"], "IO")
+        SUT_df = CSV.read(joinpath(params["input_folder"],params["files"]["IO"]), header=false, DataFrame)
+        params["accounts-type"] = "IO"
     else
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include the name of a supply-use table (SUT) or input-output table (IO) in the files block"))))
     end
     # The SUT_ranges block must be present (it's called that even for an IO table)
-    if !AMESlib.haskeyvalue(global_params,"SUT_ranges")
+    if !AMESlib.haskeyvalue(params,"SUT_ranges")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include an SUT_ranges block"))))
     end
 
     # Collect components of domestic supply and check that all are present
-    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"imports")
+    if !AMESlib.haskeyvalue(params["SUT_ranges"],"imports")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the imports column (or columns, if summed together) in the SUT_ranges block"))))
     else
-        M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["imports"]), dims=2))
-        if AMESlib.haskeyvalue(global_params["files"], "IO")
+        M = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["imports"]), dims=2))
+        if AMESlib.haskeyvalue(params["files"], "IO")
             M = -M # The convention for imports for the IO table is that it is negative
         end
     end
-    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"exports")
+    if !AMESlib.haskeyvalue(params["SUT_ranges"],"exports")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the exports column (or columns, if summed together) in the SUT_ranges block"))))
     else
-        X = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["exports"]), dims=2))
+        X = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["exports"]), dims=2))
     end
-    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"final_demand")
+    if !AMESlib.haskeyvalue(params["SUT_ranges"],"final_demand")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the final demand column (or columns, if summed together) in the SUT_ranges block"))))
     else
-        F = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["final_demand"]), dims=2))
+        F = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["final_demand"]), dims=2))
     end
-    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"investment")
+    if !AMESlib.haskeyvalue(params["SUT_ranges"],"investment")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the investment column (or columns, if summed together) in the SUT_ranges block"))))
     else
-        I = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["investment"]), dims=2))
+        I = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["investment"]), dims=2))
     end
-    if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"tot_intermediate_supply")
+    if !AMESlib.haskeyvalue(params["SUT_ranges"],"tot_intermediate_supply")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the total intermediate supply column (or columns, if summed together) in the SUT_ranges block"))))
     else
-        tot_int_sup = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["tot_intermediate_supply"]), dims=2))
+        tot_int_sup = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["tot_intermediate_supply"]), dims=2))
     end
-    if AMESlib.haskeyvalue(global_params["SUT_ranges"],"stock_change")
-        stock_change = vec(sum(AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["stock_change"]), dims=2))
+    if AMESlib.haskeyvalue(params["SUT_ranges"],"stock_change")
+        stock_change = vec(sum(AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["stock_change"]), dims=2))
     else
         stock_change = zeros(np)
     end
 
-    if global_params["accounts-type"] == "SUT"
-        if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"supply_table")
+    if params["accounts-type"] == "SUT"
+        if !AMESlib.haskeyvalue(params["SUT_ranges"],"supply_table")
         throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the supply table in the SUT_ranges block"))))
         else
-            supply_table = AMESlib.excel_range_to_mat(SUT_df, global_params["SUT_ranges"]["supply_table"])
+            supply_table = AMESlib.excel_range_to_mat(SUT_df, params["SUT_ranges"]["supply_table"])
             qs = vec(sum(supply_table, dims=2))
             g = vec(sum(supply_table, dims=1))
         end
-    elseif global_params["accounts-type"] == "IO"
-        if !AMESlib.haskeyvalue(global_params["SUT_ranges"],"io_table")
+    elseif params["accounts-type"] == "IO"
+        if !AMESlib.haskeyvalue(params["SUT_ranges"],"io_table")
             throw(ErrorException(format(AMESlib.gettext("Configuration file must include a range for the IO table in the SUT_ranges block"))))
         else
             qs = M + F + X + I + tot_int_sup + stock_change
@@ -176,112 +176,112 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     end
 
     # Remove all sectors for which there is negligible domestic production relative to imports or where g = 0
-	θ = global_params["domestic_production_share_threshold"]/100
+	θ = params["domestic_production_share_threshold"]/100
     M_equiv = transpose(supply_table) * Diagonal(1 ./ (qs .+ AMESlib.ϵ)) * M
 	zero_domprod_ndxs = findall(x -> x <= 0, min(g, (1 - θ) * g - θ * M_equiv))
     # Remove all products for which there is negligible total supply (domestic + imported) relative to total domestic output
 	zero_prod_ndxs = findall(x -> abs(x) < AMESlib.ϵ, (qs + M)/sum(g))
 
     # This is an option for symmetric IO matrices, to just have a single "excluded"
-    if AMESlib.haskeyvalue(global_params, "excluded")
-        global_params["excluded_sectors"] = global_params["excluded"]
-        global_params["excluded_products"] = global_params["excluded"]
+    if AMESlib.haskeyvalue(params, "excluded")
+        params["excluded_sectors"] = params["excluded"]
+        params["excluded_products"] = params["excluded"]
     end
 
     # Get lists of excluded sectors other than energy, defaulting to empty list
-    if !AMESlib.haskeyvalue(global_params, "excluded_sectors")
-        global_params["excluded_sectors"] = Dict()
+    if !AMESlib.haskeyvalue(params, "excluded_sectors")
+        params["excluded_sectors"] = Dict()
     end
-    if !AMESlib.haskeyvalue(global_params["excluded_sectors"], "territorial_adjustment")
-        global_params["excluded_sectors"]["territorial_adjustment"] = []
+    if !AMESlib.haskeyvalue(params["excluded_sectors"], "territorial_adjustment")
+        params["excluded_sectors"]["territorial_adjustment"] = []
     end
-    if !AMESlib.haskeyvalue(global_params["excluded_sectors"], "others")
-        global_params["excluded_sectors"]["others"] = []
+    if !AMESlib.haskeyvalue(params["excluded_sectors"], "others")
+        params["excluded_sectors"]["others"] = []
     end
-	excluded_sectors = vcat(global_params["excluded_sectors"]["territorial_adjustment"],
-							global_params["excluded_sectors"]["others"])
+	excluded_sectors = vcat(params["excluded_sectors"]["territorial_adjustment"],
+							params["excluded_sectors"]["others"])
 
     # Get lists of excluded products other than energy, defaulting to empty list
-    if !AMESlib.haskeyvalue(global_params, "excluded_products")
-        global_params["excluded_products"] = Dict()
+    if !AMESlib.haskeyvalue(params, "excluded_products")
+        params["excluded_products"] = Dict()
     end
-    if !AMESlib.haskeyvalue(global_params["excluded_products"], "territorial_adjustment")
-        global_params["excluded_products"]["territorial_adjustment"] = []
+    if !AMESlib.haskeyvalue(params["excluded_products"], "territorial_adjustment")
+        params["excluded_products"]["territorial_adjustment"] = []
     end
-    if !AMESlib.haskeyvalue(global_params["excluded_products"], "others")
-        global_params["excluded_products"]["others"] = []
+    if !AMESlib.haskeyvalue(params["excluded_products"], "others")
+        params["excluded_products"]["others"] = []
     end
-    excluded_products = vcat(global_params["excluded_products"]["territorial_adjustment"],
-                             global_params["excluded_products"]["others"])
+    excluded_products = vcat(params["excluded_products"]["territorial_adjustment"],
+                             params["excluded_products"]["others"])
    
     # Unless energy sectors & products are included in the calculation, get the lists of excluded energy sectors & products
     if !include_energy_sectors
         # Energy sectors
-        if !AMESlib.haskeyvalue(global_params["excluded_sectors"], "energy")
-            global_params["excluded_sectors"]["energy"] = []
+        if !AMESlib.haskeyvalue(params["excluded_sectors"], "energy")
+            params["excluded_sectors"]["energy"] = []
         end
-        excluded_sectors = vcat(excluded_sectors, global_params["excluded_sectors"]["energy"])
+        excluded_sectors = vcat(excluded_sectors, params["excluded_sectors"]["energy"])
         # Energy products
-        if !AMESlib.haskeyvalue(global_params["excluded_products"], "energy")
-            global_params["excluded_products"]["energy"] = []
+        if !AMESlib.haskeyvalue(params["excluded_products"], "energy")
+            params["excluded_products"]["energy"] = []
         end
-        excluded_products = vcat(excluded_products, global_params["excluded_products"]["energy"])
+        excluded_products = vcat(excluded_products, params["excluded_products"]["energy"])
     end
 
 	# These are the indexes used for the AMES model
 	user_defined_sector_ndxs = findall(.!in(excluded_sectors).(sector_codes))
 	user_defined_product_ndxs = findall(.!in(excluded_products).(product_codes))
-	global_params["sector-indexes"] = sort(setdiff(user_defined_sector_ndxs, zero_domprod_ndxs))
-	global_params["product-indexes"] = sort(setdiff(user_defined_product_ndxs, zero_prod_ndxs))
+	params["sector-indexes"] = sort(setdiff(user_defined_sector_ndxs, zero_domprod_ndxs))
+	params["product-indexes"] = sort(setdiff(user_defined_product_ndxs, zero_prod_ndxs))
 
-    global_params["energy-sector-indexes"] = []
-    global_params["energy-product-indexes"] = []
+    params["energy-sector-indexes"] = []
+    params["energy-product-indexes"] = []
 
     if !include_energy_sectors
-        user_defined_energy_sector_ndxs = findall(in(global_params["excluded_sectors"]["energy"]).(sector_codes))
-        user_defined_energy_product_ndxs = findall(in(global_params["excluded_products"]["energy"]).(product_codes))
-        global_params["energy-sector-indexes"] = sort(setdiff(user_defined_energy_sector_ndxs, zero_domprod_ndxs))
-        global_params["energy-product-indexes"] = sort(setdiff(user_defined_energy_product_ndxs, zero_prod_ndxs))
+        user_defined_energy_sector_ndxs = findall(in(params["excluded_sectors"]["energy"]).(sector_codes))
+        user_defined_energy_product_ndxs = findall(in(params["excluded_products"]["energy"]).(product_codes))
+        params["energy-sector-indexes"] = sort(setdiff(user_defined_energy_sector_ndxs, zero_domprod_ndxs))
+        params["energy-product-indexes"] = sort(setdiff(user_defined_energy_product_ndxs, zero_prod_ndxs))
     end
 
-	global_params["terr-adj-sector-indexes"] = findall(in(global_params["excluded_sectors"]["territorial_adjustment"]).(sector_codes))
-	global_params["terr-adj-product-indexes"] = findall(in(global_params["excluded_products"]["territorial_adjustment"]).(product_codes))
+	params["terr-adj-sector-indexes"] = findall(in(params["excluded_sectors"]["territorial_adjustment"]).(sector_codes))
+	params["terr-adj-product-indexes"] = findall(in(params["excluded_products"]["territorial_adjustment"]).(product_codes))
 
-	global_params["included_sector_names"] = all_sectors[:name][global_params["sector-indexes"]]
-	global_params["included_sector_codes"] = all_sectors[:code][global_params["sector-indexes"]]
-	global_params["included_product_names"] = all_products[:name][global_params["product-indexes"]]
-	global_params["included_product_codes"] = all_products[:code][global_params["product-indexes"]]
+	params["included_sector_names"] = all_sectors[:name][params["sector-indexes"]]
+	params["included_sector_codes"] = all_sectors[:code][params["sector-indexes"]]
+	params["included_product_names"] = all_products[:name][params["product-indexes"]]
+	params["included_product_codes"] = all_products[:code][params["product-indexes"]]
 
 	# These indices are with respect to the list of included product codes, not the full list
-	global_params["non-tradeable-range"] = findall(in(global_params["non_tradeable_products"]).(global_params["included_product_codes"]))
+	params["non-tradeable-range"] = findall(in(params["non_tradeable_products"]).(params["included_product_codes"]))
 
     # Default LEAP driver variable is production, but can set to "VA" for "Value added"
-    if AMESlib.haskeyvalue(global_params, "LEAP-drivers") && AMESlib.haskeyvalue(global_params["LEAP-drivers"], "default")
-        default_LEAP_driver = global_params["LEAP-drivers"]["default"]
+    if AMESlib.haskeyvalue(params, "LEAP-drivers") && AMESlib.haskeyvalue(params["LEAP-drivers"], "default")
+        default_LEAP_driver = params["LEAP-drivers"]["default"]
     else
         default_LEAP_driver = "PROD"
     end
-    if AMESlib.haskeyvalue(global_params, "LEAP-drivers") && AMESlib.haskeyvalue(global_params["LEAP-drivers"], "options")
-        LEAP_drivers = global_params["LEAP-drivers"]["options"]
+    if AMESlib.haskeyvalue(params, "LEAP-drivers") && AMESlib.haskeyvalue(params["LEAP-drivers"], "options")
+        LEAP_drivers = params["LEAP-drivers"]["options"]
     else
         LEAP_drivers = Dict("PROD" => "production", "VA" => "value added")
     end
-    if AMESlib.haskeyvalue(global_params, "LEAP-sectors")
+    if AMESlib.haskeyvalue(params, "LEAP-sectors")
         # Optionally override the default LEAP driver
-        global_params["LEAP_sector_drivers"] = [AMESlib.haskeyvalue(x, "driver") ? x["driver"] : default_LEAP_driver for x in global_params["LEAP-sectors"]]
+        params["LEAP_sector_drivers"] = [AMESlib.haskeyvalue(x, "driver") ? x["driver"] : default_LEAP_driver for x in params["LEAP-sectors"]]
         # LEAP sectors allow for multiple AMES sector codes (production or value added is summed) and multiple branch/variable combos (the index is applied to each combination)
-        global_params["LEAP_sector_names"] = [x["name"] for x in global_params["LEAP-sectors"]]
-        LEAP_sector_codes = [x["codes"] for x in global_params["LEAP-sectors"]]
-        global_params["LEAP_sector_indices"] = Array{Any}(undef,length(LEAP_sector_codes))
+        params["LEAP_sector_names"] = [x["name"] for x in params["LEAP-sectors"]]
+        LEAP_sector_codes = [x["codes"] for x in params["LEAP-sectors"]]
+        params["LEAP_sector_indices"] = Array{Any}(undef,length(LEAP_sector_codes))
         for i in eachindex(LEAP_sector_codes)
-            global_params["LEAP_sector_indices"][i] = findall([in(x, LEAP_sector_codes[i]) for x in global_params["included_sector_codes"]])
+            params["LEAP_sector_indices"][i] = findall([in(x, LEAP_sector_codes[i]) for x in params["included_sector_codes"]])
         end
     else
-        global_params["LEAP_sector_drivers"] = []
-        global_params["LEAP_sector_names"] = []
-        global_params["LEAP_sector_indices"] = []
+        params["LEAP_sector_drivers"] = []
+        params["LEAP_sector_names"] = []
+        params["LEAP_sector_indices"] = []
     end
-    for d in global_params["LEAP_sector_drivers"]
+    for d in params["LEAP_sector_drivers"]
         if d ∉ keys(LEAP_drivers)
             throw(DomainError(d, format(AMESlib.gettext("LEAP driver must be one of \"{1}\""), join(keys(LEAP_drivers), "\", \""))))
             break
@@ -289,279 +289,279 @@ function parse_param_file(YAML_file::AbstractString; include_energy_sectors::Boo
     end
 
     # Investment function parameters
-    if !AMESlib.haskeyvalue(global_params, "investment-fcn")
+    if !AMESlib.haskeyvalue(params, "investment-fcn")
         # This entry must be present
         throw(KeyError("investment-fcn"))
     end
     # Default is that the profit rate is based on realized profits
-    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "use_profits_at_full_capacity")
-        global_params["investment-fcn"]["use_profits_at_full_capacity"] = false
+    if !AMESlib.haskeyvalue(params["investment-fcn"], "use_profits_at_full_capacity")
+        params["investment-fcn"]["use_profits_at_full_capacity"] = false
     end
     # If missing, quietly set to zero (the base model)
-    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "net_export")
-        global_params["investment-fcn"]["net_export"] = 0.0
+    if !AMESlib.haskeyvalue(params["investment-fcn"], "net_export")
+        params["investment-fcn"]["net_export"] = 0.0
     end
     # Set the following to zero if absent, but issue a warning
-    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "util_sens")
+    if !AMESlib.haskeyvalue(params["investment-fcn"], "util_sens")
         @warn AMESlib.gettext("Parameter 'util_sens' is missing from the configuration file: setting to zero")
-        global_params["investment-fcn"]["util_sens"] = 0.0
+        params["investment-fcn"]["util_sens"] = 0.0
     end
-    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "profit_sens")
+    if !AMESlib.haskeyvalue(params["investment-fcn"], "profit_sens")
         @warn AMESlib.gettext("Parameter 'profit_sens' is missing from the configuration file: setting to zero")
-        global_params["investment-fcn"]["profit_sens"] = 0.0
+        params["investment-fcn"]["profit_sens"] = 0.0
     end
-    if !AMESlib.haskeyvalue(global_params["investment-fcn"], "intrate_sens")
+    if !AMESlib.haskeyvalue(params["investment-fcn"], "intrate_sens")
         @warn AMESlib.gettext("Parameter 'intrate_sens' is missing from the configuration file: setting to zero")
-        global_params["investment-fcn"]["intrate_sens"] = 0.0
+        params["investment-fcn"]["intrate_sens"] = 0.0
     end
 
     # Labor productivity growth parameters
-    if !AMESlib.haskeyvalue(global_params, "labor-prod-fcn")
-        global_params["labor-prod-fcn"] = Dict()
-        global_params["labor-prod-fcn"]["use_KV_model"] = true
-        global_params["labor-prod-fcn"]["use_sector_params_if_available"] = true
-        global_params["labor-prod-fcn"]["labor_prod_gr_default"] = 0.0
-        global_params["labor-prod-fcn"]["KV_coeff_default"] = 0.5
-        global_params["labor-prod-fcn"]["KV_intercept_default"] = 0.0
+    if !AMESlib.haskeyvalue(params, "labor-prod-fcn")
+        params["labor-prod-fcn"] = Dict()
+        params["labor-prod-fcn"]["use_KV_model"] = true
+        params["labor-prod-fcn"]["use_sector_params_if_available"] = true
+        params["labor-prod-fcn"]["labor_prod_gr_default"] = 0.0
+        params["labor-prod-fcn"]["KV_coeff_default"] = 0.5
+        params["labor-prod-fcn"]["KV_intercept_default"] = 0.0
     else
-        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "use_KV_model")
+        if !AMESlib.haskeyvalue(params["labor-prod-fcn"], "use_KV_model")
             # If this key is missing and there are no defaults for the KV parameters, presume that a specified labor productivity is intended
-            global_params["labor-prod-fcn"]["use_KV_model"] = AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_coeff_default") ||
-                                                              AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_intercept_default")
+            params["labor-prod-fcn"]["use_KV_model"] = AMESlib.haskeyvalue(params["labor-prod-fcn"], "KV_coeff_default") ||
+                                                              AMESlib.haskeyvalue(params["labor-prod-fcn"], "KV_intercept_default")
         end
-        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "use_sector_params_if_available")
-            global_params["labor-prod-fcn"]["use_sector_params_if_available"] = true
+        if !AMESlib.haskeyvalue(params["labor-prod-fcn"], "use_sector_params_if_available")
+            params["labor-prod-fcn"]["use_sector_params_if_available"] = true
         end
-        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "labor_prod_gr_default")
-            global_params["labor-prod-fcn"]["labor_prod_gr_default"] = 0.0
+        if !AMESlib.haskeyvalue(params["labor-prod-fcn"], "labor_prod_gr_default")
+            params["labor-prod-fcn"]["labor_prod_gr_default"] = 0.0
         end
-        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_coeff_default")
-            global_params["labor-prod-fcn"]["KV_coeff_default"] = 0.5
+        if !AMESlib.haskeyvalue(params["labor-prod-fcn"], "KV_coeff_default")
+            params["labor-prod-fcn"]["KV_coeff_default"] = 0.5
         end
-        if !AMESlib.haskeyvalue(global_params["labor-prod-fcn"], "KV_intercept_default")
-            global_params["labor-prod-fcn"]["KV_intercept_default"] = 0.0
+        if !AMESlib.haskeyvalue(params["labor-prod-fcn"], "KV_intercept_default")
+            params["labor-prod-fcn"]["KV_intercept_default"] = 0.0
         end
     end
 
     # Introduce a new key, "use_sector_params", set to true only if use_sector_params_if_available = true and they are available
-    global_params["labor-prod-fcn"]["use_sector_params"] = false
-    if global_params["labor-prod-fcn"]["use_sector_params_if_available"]
+    params["labor-prod-fcn"]["use_sector_params"] = false
+    if params["labor-prod-fcn"]["use_sector_params_if_available"]
         # Check whether sectoral values are specified
-        sector_info_df = CSV.read(joinpath(global_params["input_folder"], global_params["files"]["sector_info"]), DataFrame)
+        sector_info_df = CSV.read(joinpath(params["input_folder"], params["files"]["sector_info"]), DataFrame)
         if hasproperty(sector_info_df, :empl0) && sum(ismissing.(sector_info_df.empl0)) == 0 # Check that full employment data are present (no defaults)
-            if global_params["labor-prod-fcn"]["use_KV_model"]
-                global_params["labor-prod-fcn"]["use_sector_params"] = hasproperty(sector_info_df, :KV_coeff) && hasproperty(sector_info_df, :KV_intercept)
+            if params["labor-prod-fcn"]["use_KV_model"]
+                params["labor-prod-fcn"]["use_sector_params"] = hasproperty(sector_info_df, :KV_coeff) && hasproperty(sector_info_df, :KV_intercept)
             else
-                global_params["labor-prod-fcn"]["use_sector_params"] = hasproperty(sector_info_df, :labor_prod_gr)
+                params["labor-prod-fcn"]["use_sector_params"] = hasproperty(sector_info_df, :labor_prod_gr)
             end
         end
     end
 
     # Wage function defaults
-    if !AMESlib.haskeyvalue(global_params, "wage-fcn")
-        global_params["wage-fcn"] = Dict()
-        global_params["wage-fcn"]["infl_passthrough"] = 1.0
-        global_params["wage-fcn"]["lab_constr_coeff"] = 0.0
+    if !AMESlib.haskeyvalue(params, "wage-fcn")
+        params["wage-fcn"] = Dict()
+        params["wage-fcn"]["infl_passthrough"] = 1.0
+        params["wage-fcn"]["lab_constr_coeff"] = 0.0
     else
-        if !AMESlib.haskeyvalue(global_params["wage-fcn"], "infl_passthrough")
-            global_params["wage-fcn"]["infl_passthrough"] = 1.0
+        if !AMESlib.haskeyvalue(params["wage-fcn"], "infl_passthrough")
+            params["wage-fcn"]["infl_passthrough"] = 1.0
         end
-        if !AMESlib.haskeyvalue(global_params["wage-fcn"], "lab_constr_coeff")
-            global_params["wage-fcn"]["lab_constr_coeff"] = 0.0
+        if !AMESlib.haskeyvalue(params["wage-fcn"], "lab_constr_coeff")
+            params["wage-fcn"]["lab_constr_coeff"] = 0.0
         end
     end
 
     # Intermediate coefficient technological change
-    if AMESlib.haskeyvalue(global_params, "tech-param-change")
+    if AMESlib.haskeyvalue(params, "tech-param-change")
         # Backwards compatability: Allow either "rate_constant" or "rate_constant_default"
-        if AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant") && !AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default")
-            global_params["tech-param-change"]["rate_constant_default"] = global_params["tech-param-change"]["rate_constant"]
+        if AMESlib.haskeyvalue(params["tech-param-change"], "rate_constant") && !AMESlib.haskeyvalue(params["tech-param-change"], "rate_constant_default")
+            params["tech-param-change"]["rate_constant_default"] = params["tech-param-change"]["rate_constant"]
         end
-        if AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default") || AMESlib.haskeyvalue(global_params["tech-param-change"], "exponent_default")
-            if !AMESlib.haskeyvalue(global_params["tech-param-change"], "calculate")
-                global_params["tech-param-change"]["calculate"] = true
+        if AMESlib.haskeyvalue(params["tech-param-change"], "rate_constant_default") || AMESlib.haskeyvalue(params["tech-param-change"], "exponent_default")
+            if !AMESlib.haskeyvalue(params["tech-param-change"], "calculate")
+                params["tech-param-change"]["calculate"] = true
             end
         else
             # If no parameter defaults, calculate only if use_sector_params_if_available explicitly set to true
-            if !AMESlib.haskeyvalue(global_params["tech-param-change"], "calculate")
-                global_params["tech-param-change"]["calculate"] = AMESlib.haskeyvalue(global_params["tech-param-change"], "use_sector_params_if_available") &&
-                                                                    global_params["tech-param-change"]["use_sector_params_if_available"]
+            if !AMESlib.haskeyvalue(params["tech-param-change"], "calculate")
+                params["tech-param-change"]["calculate"] = AMESlib.haskeyvalue(params["tech-param-change"], "use_sector_params_if_available") &&
+                                                                    params["tech-param-change"]["use_sector_params_if_available"]
             end
         end
-        if !AMESlib.haskeyvalue(global_params["tech-param-change"], "use_sector_params_if_available")
-            global_params["tech-param-change"]["use_sector_params_if_available"] = true
+        if !AMESlib.haskeyvalue(params["tech-param-change"], "use_sector_params_if_available")
+            params["tech-param-change"]["use_sector_params_if_available"] = true
         end
-        if !AMESlib.haskeyvalue(global_params["tech-param-change"], "rate_constant_default")
-            global_params["tech-param-change"]["rate_constant_default"] = 0.0
+        if !AMESlib.haskeyvalue(params["tech-param-change"], "rate_constant_default")
+            params["tech-param-change"]["rate_constant_default"] = 0.0
         end
-        if !AMESlib.haskeyvalue(global_params["tech-param-change"], "exponent_default")
-            global_params["tech-param-change"]["exponent_default"] = 2.0
+        if !AMESlib.haskeyvalue(params["tech-param-change"], "exponent_default")
+            params["tech-param-change"]["exponent_default"] = 2.0
         end
     else
-        global_params["tech-param-change"] = Dict()
-        global_params["tech-param-change"]["calculate"] = false # If it is not present, default to false
-        global_params["tech-param-change"]["use_sector_params_if_available"] = true
-        global_params["tech-param-change"]["rate_constant_default"] = 0.0
-        global_params["tech-param-change"]["exponent_default"] = 2.0
+        params["tech-param-change"] = Dict()
+        params["tech-param-change"]["calculate"] = false # If it is not present, default to false
+        params["tech-param-change"]["use_sector_params_if_available"] = true
+        params["tech-param-change"]["rate_constant_default"] = 0.0
+        params["tech-param-change"]["exponent_default"] = 2.0
     end
 
     # Provide defaults for the initial value adjustment (calibration) block
-    if AMESlib.haskeyvalue(global_params, "calib")
-        if !AMESlib.haskeyvalue(global_params["calib"], "nextper_inv_adj_factor")
-            global_params["calib"]["nextper_inv_adj_factor"] = 0.0
+    if AMESlib.haskeyvalue(params, "calib")
+        if !AMESlib.haskeyvalue(params["calib"], "nextper_inv_adj_factor")
+            params["calib"]["nextper_inv_adj_factor"] = 0.0
         end
-        if !AMESlib.haskeyvalue(global_params["calib"], "max_export_adj_factor")
-            global_params["calib"]["max_export_adj_factor"] = 0.0
+        if !AMESlib.haskeyvalue(params["calib"], "max_export_adj_factor")
+            params["calib"]["max_export_adj_factor"] = 0.0
         end
-        if !AMESlib.haskeyvalue(global_params["calib"], "max_hh_dmd_adj_factor")
-            global_params["calib"]["max_hh_dmd_adj_factor"] = 0.0
+        if !AMESlib.haskeyvalue(params["calib"], "max_hh_dmd_adj_factor")
+            params["calib"]["max_hh_dmd_adj_factor"] = 0.0
         end
-        if !AMESlib.haskeyvalue(global_params["calib"], "pot_output_adj_factor")
-            global_params["calib"]["pot_output_adj_factor"] = 0.0
+        if !AMESlib.haskeyvalue(params["calib"], "pot_output_adj_factor")
+            params["calib"]["pot_output_adj_factor"] = 0.0
         end
     else
-        global_params["calib"] = Dict()
-        global_params["calib"]["nextper_inv_adj_factor"] = 0.0
-        global_params["calib"]["max_export_adj_factor"] = 0.0
-        global_params["calib"]["max_hh_dmd_adj_factor"] = 0.0
-        global_params["calib"]["pot_output_adj_factor"] = 0.0
+        params["calib"] = Dict()
+        params["calib"]["nextper_inv_adj_factor"] = 0.0
+        params["calib"]["max_export_adj_factor"] = 0.0
+        params["calib"]["max_hh_dmd_adj_factor"] = 0.0
+        params["calib"]["pot_output_adj_factor"] = 0.0
     end
 
     #------------------------------------------------
     # LEAP-related parameters
     #------------------------------------------------
     # Provide defaults for the LEAP model execution parameters if needed
-    if AMESlib.haskeyvalue(global_params, "model")
-        if !AMESlib.haskeyvalue(global_params["model"], "run_leap")
-            global_params["model"]["run_leap"] = false
+    if AMESlib.haskeyvalue(params, "model")
+        if !AMESlib.haskeyvalue(params["model"], "run_leap")
+            params["model"]["run_leap"] = false
         end
-        if !AMESlib.haskeyvalue(global_params["model"], "hide_leap")
-            global_params["model"]["hide_leap"] = false
+        if !AMESlib.haskeyvalue(params["model"], "hide_leap")
+            params["model"]["hide_leap"] = false
         end
-        if !AMESlib.haskeyvalue(global_params["model"], "max_runs")
-            global_params["model"]["max_runs"] = 5
+        if !AMESlib.haskeyvalue(params["model"], "max_runs")
+            params["model"]["max_runs"] = 5
         end
-        if !AMESlib.haskeyvalue(global_params["model"], "max_tolerance")
-            global_params["model"]["max_tolerance"] = 5.0
+        if !AMESlib.haskeyvalue(params["model"], "max_tolerance")
+            params["model"]["max_tolerance"] = 5.0
         end
     else
-        global_params["model"] = Dict()
-        global_params["model"]["run_leap"] = false
+        params["model"] = Dict()
+        params["model"]["run_leap"] = false
         # These are unused if run_leap is false, but set anyway
-        global_params["model"]["hide_leap"] = false
-        global_params["model"]["max_runs"] = 5
-        global_params["model"]["max_tolerance"] = 5.0
+        params["model"]["hide_leap"] = false
+        params["model"]["max_runs"] = 5
+        params["model"]["max_tolerance"] = 5.0
     end
 
     # LEAP potential output is specified for a single AMES sector code, but allows for multiple branch/variable combos (values are summed)
-    if AMESlib.haskeyvalue(global_params, "LEAP-potential-output")
-        LEAP_potout_codes = [x["code"] for x in global_params["LEAP-potential-output"]]
+    if AMESlib.haskeyvalue(params, "LEAP-potential-output")
+        LEAP_potout_codes = [x["code"] for x in params["LEAP-potential-output"]]
         # If the sector code is not included, report its index as "missing"
-        global_params["LEAP_potout_indices"] = Array{Union{Missing, Int64}}(missing, length(LEAP_potout_codes))
+        params["LEAP_potout_indices"] = Array{Union{Missing, Int64}}(missing, length(LEAP_potout_codes))
         for i in eachindex(LEAP_potout_codes)
-            if LEAP_potout_codes[i] in global_params["included_sector_codes"]
-                global_params["LEAP_potout_indices"][i] = findall(x -> x == LEAP_potout_codes[i], global_params["included_sector_codes"])[1]
+            if LEAP_potout_codes[i] in params["included_sector_codes"]
+                params["LEAP_potout_indices"][i] = findall(x -> x == LEAP_potout_codes[i], params["included_sector_codes"])[1]
             else
                 @warn format(AMESlib.gettext("Sector code '{1}' is listed in 'LEAP-potential-output' but is not included in the AMES model calculations"), LEAP_potout_codes[i])
             end
         end
     else
-        global_params["LEAP_potout_indices"] = []
+        params["LEAP_potout_indices"] = []
     end
 
     # LEAP prices are drawn from a single LEAP branch, but can be assigned to multiple AMES product codes
-    if AMESlib.haskeyvalue(global_params, "LEAP-prices")
-        LEAP_price_codes = [x["codes"] for x in global_params["LEAP-prices"]]
-        global_params["LEAP_price_indices"] = Array{Any}(undef,length(LEAP_price_codes))
+    if AMESlib.haskeyvalue(params, "LEAP-prices")
+        LEAP_price_codes = [x["codes"] for x in params["LEAP-prices"]]
+        params["LEAP_price_indices"] = Array{Any}(undef,length(LEAP_price_codes))
         for i in eachindex(LEAP_price_codes)
-            global_params["LEAP_price_indices"][i] = findall([in(x, LEAP_price_codes[i]) for x in global_params["included_product_codes"]])
+            params["LEAP_price_indices"][i] = findall([in(x, LEAP_price_codes[i]) for x in params["included_product_codes"]])
         end
     else
-        global_params["LEAP_price_indices"] = []
+        params["LEAP_price_indices"] = []
     end
 
     # Check that LEAP-info keys are reported
-    if AMESlib.haskeyvalue(global_params, "LEAP-info")
+    if AMESlib.haskeyvalue(params, "LEAP-info")
         # Key "scenario" is specified, which overrides "input_scenario" and "result_scenario"
-        if AMESlib.haskeyvalue(global_params["LEAP-info"], "scenario")
-            global_params["LEAP-info"]["input_scenario"] = global_params["LEAP-info"]["scenario"]
-            global_params["LEAP-info"]["result_scenario"] = global_params["LEAP-info"]["scenario"]
+        if AMESlib.haskeyvalue(params["LEAP-info"], "scenario")
+            params["LEAP-info"]["input_scenario"] = params["LEAP-info"]["scenario"]
+            params["LEAP-info"]["result_scenario"] = params["LEAP-info"]["scenario"]
         end
         # Key "input_scenario" is missing, so default to empty string (so that the currently loaded scenario in LEAP is used)
-        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "input_scenario")
-            global_params["LEAP-info"]["input_scenario"] = ""
+        if !AMESlib.haskeyvalue(params["LEAP-info"], "input_scenario")
+            params["LEAP-info"]["input_scenario"] = ""
         end
         # Key "result_scenario" is not specified, so it defaults to "input_scenario"
-        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "result_scenario")
-            global_params["LEAP-info"]["result_scenario"] = global_params["LEAP-info"]["input_scenario"]
+        if !AMESlib.haskeyvalue(params["LEAP-info"], "result_scenario")
+            params["LEAP-info"]["result_scenario"] = params["LEAP-info"]["input_scenario"]
         end
         # Key "region" is missing, so default to empty string
-        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "region")
-            global_params["LEAP-info"]["region"] = ""
+        if !AMESlib.haskeyvalue(params["LEAP-info"], "region")
+            params["LEAP-info"]["region"] = ""
         end
         # Key "last_historical_year" is missing, so default to start of scenario
-        if !AMESlib.haskeyvalue(global_params["LEAP-info"], "last_historical_year")
-            global_params["LEAP-info"]["last_historical_year"] = global_params["years"]["start"]
+        if !AMESlib.haskeyvalue(params["LEAP-info"], "last_historical_year")
+            params["LEAP-info"]["last_historical_year"] = params["years"]["start"]
         end
     else
-        global_params["LEAP-info"] = Dict()
-        global_params["LEAP-info"]["last_historical_year"] = global_params["years"]["start"]
-        global_params["LEAP-info"]["input_scenario"] = ""
-        global_params["LEAP-info"]["result_scenario"] = ""
+        params["LEAP-info"] = Dict()
+        params["LEAP-info"]["last_historical_year"] = params["years"]["start"]
+        params["LEAP-info"]["input_scenario"] = ""
+        params["LEAP-info"]["result_scenario"] = ""
     end
 
     # If running LEAP, ensure that LEAP historical year is within year range
-    if global_params["model"]["run_leap"]
-        if global_params["LEAP-info"]["last_historical_year"] < global_params["years"]["start"]
+    if params["model"]["run_leap"]
+        if params["LEAP-info"]["last_historical_year"] < params["years"]["start"]
             throw(ErrorException(format(AMESlib.gettext("LEAP last historical year {1} is earlier than the start year {2}"),
-                    global_params["LEAP-info"]["last_historical_year"], global_params["years"]["start"])))
-        elseif global_params["LEAP-info"]["last_historical_year"] > global_params["years"]["end"]
+                    params["LEAP-info"]["last_historical_year"], params["years"]["start"])))
+        elseif params["LEAP-info"]["last_historical_year"] > params["years"]["end"]
             throw(ErrorException(format(AMESlib.gettext("LEAP last historical year {1} is later than the end year {2}"),
-            global_params["LEAP-info"]["last_historical_year"], global_params["years"]["end"])))
+            params["LEAP-info"]["last_historical_year"], params["years"]["end"])))
         end
     end
 
     # Check that LEAP-investment keys are reported
-    if AMESlib.haskeyvalue(global_params, "LEAP-investment")
+    if AMESlib.haskeyvalue(params, "LEAP-investment")
         # Key "inv_costs_unit" is missing, so apply the default
-        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_unit")
-            global_params["LEAP-investment"]["inv_costs_unit"] = ""
+        if !AMESlib.haskeyvalue(params["LEAP-investment"], "inv_costs_unit")
+            params["LEAP-investment"]["inv_costs_unit"] = ""
         end
         # Key "inv_costs_scale" is missing, so default to 1.0
-        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_scale")
-            global_params["LEAP-investment"]["inv_costs_scale"] = 1.0
+        if !AMESlib.haskeyvalue(params["LEAP-investment"], "inv_costs_scale")
+            params["LEAP-investment"]["inv_costs_scale"] = 1.0
         end
         # Key "inv_costs_apply_xr" is missing, so default to false
-        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "inv_costs_apply_xr")
-            global_params["LEAP-investment"]["inv_costs_apply_xr"] = false
+        if !AMESlib.haskeyvalue(params["LEAP-investment"], "inv_costs_apply_xr")
+            params["LEAP-investment"]["inv_costs_apply_xr"] = false
         end
         # Key "excluded_branches" is missing, so default to empty list
-        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "excluded_branches")
-            global_params["LEAP-investment"]["excluded_branches"] = []
+        if !AMESlib.haskeyvalue(params["LEAP-investment"], "excluded_branches")
+            params["LEAP-investment"]["excluded_branches"] = []
         end
         # Key "distribute_costs_over" is missing, so default to 1 year
-        if !AMESlib.haskeyvalue(global_params["LEAP-investment"], "distribute_costs_over")
-            global_params["LEAP-investment"]["distribute_costs_over"] = Dict("default" => 1, "by_branch" => [])
+        if !AMESlib.haskeyvalue(params["LEAP-investment"], "distribute_costs_over")
+            params["LEAP-investment"]["distribute_costs_over"] = Dict("default" => 1, "by_branch" => [])
         else
             # Key "default" is missing, so default to 1 year
-            if !AMESlib.haskeyvalue(global_params["LEAP-investment"]["distribute_costs_over"], "default")
-                global_params["LEAP-investment"]["distribute_costs_over"]["default"] = 1
+            if !AMESlib.haskeyvalue(params["LEAP-investment"]["distribute_costs_over"], "default")
+                params["LEAP-investment"]["distribute_costs_over"]["default"] = 1
             end
             # Key "by_branch" is missing, so default to empty list
-            if !AMESlib.haskeyvalue(global_params["LEAP-investment"]["distribute_costs_over"], "by_branch")
-                global_params["LEAP-investment"]["distribute_costs_over"]["by_branch"] = []
+            if !AMESlib.haskeyvalue(params["LEAP-investment"]["distribute_costs_over"], "by_branch")
+                params["LEAP-investment"]["distribute_costs_over"]["by_branch"] = []
             end
         end
     else
-        global_params["LEAP-investment"] = Dict()
-        global_params["LEAP-investment"]["inv_costs_unit"] = ""
-        global_params["LEAP-investment"]["inv_costs_scale"] = 1.0
-        global_params["LEAP-investment"]["inv_costs_apply_xr"] = false
-        global_params["LEAP-investment"]["excluded_branches"] = []
-        global_params["LEAP-investment"]["distribute_costs_over"] = Dict("default" => 1, "by_branch" => [])
+        params["LEAP-investment"] = Dict()
+        params["LEAP-investment"]["inv_costs_unit"] = ""
+        params["LEAP-investment"]["inv_costs_scale"] = 1.0
+        params["LEAP-investment"]["inv_costs_apply_xr"] = false
+        params["LEAP-investment"]["excluded_branches"] = []
+        params["LEAP-investment"]["distribute_costs_over"] = Dict("default" => 1, "by_branch" => [])
     end
 
-    return global_params
+    return params
 end # parse_param_file
 
 "Pull in user-specified parameters from different CSV input files with filenames specified in the YAML configuration file."

@@ -197,7 +197,6 @@ SUT_ranges:
     # Symmetric input-output matrix
     io_table: C2:P15
     # Columns -- groups of columns will be summed together
-    tot_supply: Q2:Q15
     imports: S2:S15 # Entries must be negative for an IO table
     exports: R2:R15
     final_demand: T2:V15
@@ -206,7 +205,7 @@ SUT_ranges:
     tot_intermediate_supply: Q2:Q15
     # Rows indexed by sector -- groups of rows will be summed together
     tot_intermediate_demand: C16:P16
-    wages: C18:P18
+    wages: C18:P19
 
 #---------------------------------------------------------------------------
 # Parameters for running LEAP with the AMES model

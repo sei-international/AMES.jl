@@ -119,7 +119,14 @@ end # df_to_mat
 "Extract a range in Excel format from a dataframe and return a numeric matrix"
 function excel_range_to_mat(df::DataFrame, str::AbstractString)
 	rng = excel_range_to_rowcol_pair(str)
-	return df_to_mat(df[rng[1][1]:rng[2][1],rng[1][2]:rng[2][2]])
+	retval = try
+		df_to_mat(df[rng[1][1]:rng[2][1],rng[1][2]:rng[2][2]])
+	catch e
+		if isa(e, BoundsError)
+			error(format(gettext("Cell range '{1}' is not found in your input file"), str))
+		end
+	end
+	return retval
 end # excel_range_to_mat
 
 "Check whether a Dict has a key and that the value is not `nothing`"

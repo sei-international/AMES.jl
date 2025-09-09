@@ -37,7 +37,7 @@ makedocs(
         ]
         "Using AMES" => [
             "Configuration file" => "config.md"
-            "Supply-use table" => "sut.md"
+            "Supply-use or IO table" => "sut.md"
             "External parameter files" => "params.md"
             "Running the AMES model" => "running-ames.md"
             "Output files" => "model-outputs.md"

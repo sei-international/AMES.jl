@@ -18,11 +18,15 @@ Depth = 3
 
 ## [General settings](@id config-general-settings)
 
-The configuration file is made up of several blocks. The first block names a subfolder for storing outputs. It will be created inside an `outputs` folder (see [Output files](@ref model-outputs)). Different configuration files should specify different output folders so that scenarios can be distinguished.
+The configuration file is made up of several blocks. The first block names a subfolder for storing outputs. It will be created inside an `outputs` folder (see [Output files](@ref model-outputs)). Different configuration files should specify different output folders so that scenarios can be distinguished. Additionally, if AMES is run with `add_timestamp = true` (see [Running the AMES model](@ref running-ames)), then every run will be stored in a separate folder. This can be useful when calibrating and debugging a model.
+
+While it is not required, it is possible to specify a subfolder inside the `inputs` folder. The `inputs` folder contains the [supply-use or input-output table](@ref sut) (SUT or IO) as well as the [external parameter files](@ref params). This is useful when testing different model configurations or data sources. 
 ```yaml
 #---------------------------------------------------------------------------
 # Folder inside the "outputs" folder to store calibration, results, and diagnostics
+#   Note: Optionally, a folder can be named inside the "inputs" folder
 #---------------------------------------------------------------------------
+input_folder: Standard
 output_folder: Baseline
 ```
 
@@ -39,6 +43,9 @@ years:
 
 ### [Required input files](@id config-required-input-files)
 The next block specifies the required [external parameter files](@ref params). Other, optional input files are described below. In many cases, the input files will be the same across a set of scenarios. However, it is possible that they might differ. For example, the [supply-use table](@ref sut), given by the `SUT` parameter, could be drawn from different years for calibration purposes, and different `time_series` might distinguish different scenarios.
+
+!!! warning "Input-output table"
+    If an input-output table is used instead of a supply-use table, then the block must include `IO: ...` rather than `SUT: ...`.
 
 This block also contains a flag saying whether the exchange rate time series, in the `time_series` file, is for the nominal or real exchange rate. This line can be omitted, in which case the default is for a nominal exchange rate. To specify a real exchange rate, set this equal to `true`.
 ```yaml
@@ -368,9 +375,10 @@ objective-fcn:
         exports_cov: 0.5
 ```
 
-## [Linking to the supply-use table](@id config-sut)
-The next block is for specifying the structure of the [supply-use table](@ref sut) and how it relates to variables in AMES.
+## [Linking to the supply-use (SUT) or input-output (IO) table](@id config-sut)
+The next block is for specifying the structure of either a [supply-use or input-output table](@ref sut) and how it relates to variables in AMES.
 
+### Linking to a supply-use (SUT) table
 The first section of this block specifies sectors and products that are excluded from the simulation. The entire section or any item can be excluded. Alternatively, items can be set to the empty list `[]` or to YAML's "no value" symbol, `~`.
 
 There are three categories:
@@ -425,6 +433,36 @@ SUT_ranges:
     # Rows indexed by sector -- groups of rows will be summed together
     tot_intermediate_demand: J35:W35
     wages: J37:W38
+```
+### Linking to an input-output (IO) table
+This section explains how linking to an IO table differs from linking to an SUT table.
+
+One feature of IO tables is that, in contrast to SUT table, they relate sectors to sectors (a sector × sector table) or products to products (a product × product table), but they do not have both. For this reason, the first part of this block lists `excluded` items, without saying whether they are products or sectors:
+```yaml
+excluded:
+    energy: [coal, petr, util]
+    territorial_adjustment: []
+    others: []
+```
+
+The next block that is changed is the one named `SUT_ranges`. The block is still called `SUT_ranges` even though it is an IO table and not an SUT. Compared to the specification for an SUT, the specification for an IO table has the following features:
+1. An `io_table` range is specified, rather than the separate `supply_table` and `use_table` for the SUT.
+2. There are no entries for `tot_supply`, `margins`, or `taxes`.
+3. In the IO table, the imports entries must be negative, as shown in the sample `Freedonia_IO.csv` file.
+```yaml    
+SUT_ranges:
+    # Symmetric input-output matrix
+    io_table: C2:P15
+    # Columns -- groups of columns will be summed together
+    imports: S2:S15 # Entries must be negative for an IO table
+    exports: R2:R15
+    final_demand: T2:V15
+    investment: W2:W15
+    stock_change: X2:X15
+    tot_intermediate_supply: Q2:Q15
+    # Rows indexed by sector -- groups of rows will be summed together
+    tot_intermediate_demand: C16:P16
+    wages: C18:P19
 ```
 
 ## [Mapping AMES to LEAP](@id config-link-LEAP)

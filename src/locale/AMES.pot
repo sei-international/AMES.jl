@@ -15,7 +15,7 @@ msgstr ""
 msgid "Year"
 msgstr ""
 
-#: SUTlib.jl:94
+#: SUTlib.jl:100
 msgid "Years must include both 'start' and 'end'"
 msgstr ""
 
@@ -27,11 +27,11 @@ msgstr ""
 msgid "Results did not converge: {1:.2f}% > {2:.2f}% target..."
 msgstr ""
 
-#: SUTlib.jl:118
+#: SUTlib.jl:127
 msgid "Configuration file must include a range for the imports column (or columns, if summed together) in the SUT_ranges block"
 msgstr ""
 
-#: SUTlib.jl:253
+#: SUTlib.jl:314
 msgid "Parameter 'intrate_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
@@ -43,7 +43,7 @@ msgstr ""
 msgid "Configuration file: '{1}'"
 msgstr ""
 
-#: SUTlib.jl:778
+#: SUTlib.jl:839
 msgid "Year {1:d} is not in time series range {2:d}:{3:d}"
 msgstr ""
 
@@ -51,11 +51,11 @@ msgstr ""
 msgid "GDP gr"
 msgstr ""
 
-#: SUTlib.jl:245
+#: SUTlib.jl:306
 msgid "Parameter 'util_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
-#: SUTlib.jl:578
+#: SUTlib.jl:639
 msgid "Exogenous maximum capacity utilization file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
@@ -71,7 +71,7 @@ msgstr ""
 msgid "exports"
 msgstr ""
 
-#: SUTlib.jl:569
+#: SUTlib.jl:630
 msgid "Exogenous potential output file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
@@ -87,7 +87,7 @@ msgstr ""
 msgid "energy investment"
 msgstr ""
 
-#: SUTlib.jl:249
+#: SUTlib.jl:310
 msgid "Parameter 'profit_sens' is missing from the configuration file: setting to zero"
 msgstr ""
 
@@ -103,7 +103,7 @@ msgstr ""
 msgid "imports"
 msgstr ""
 
-#: SUTlib.jl:1133
+#: SUTlib.jl:1222
 msgid "Configuration file must include a range for the wages row (or rows, if summed together) in the SUT_ranges block"
 msgstr ""
 
@@ -115,7 +115,7 @@ msgstr ""
 msgid "nominal xr index"
 msgstr ""
 
-#: SUTlib.jl:1020
+#: SUTlib.jl:1173
 msgid "Configuration file must include a range for the use table in the SUT_ranges block"
 msgstr ""
 
@@ -123,7 +123,7 @@ msgstr ""
 msgid "calibration"
 msgstr ""
 
-#: SUTlib.jl:1084
+#: SUTlib.jl:140
 msgid "Configuration file must include a range for the final demand column (or columns, if summed together) in the SUT_ranges block"
 msgstr ""
 
@@ -131,7 +131,7 @@ msgstr ""
 msgid "Running LEAP model..."
 msgstr ""
 
-#: SUTlib.jl:751
+#: SUTlib.jl:812
 msgid "Value for exchange rate missing in year {1:d}, with no default"
 msgstr ""
 
@@ -139,7 +139,7 @@ msgstr ""
 msgid "sector output"
 msgstr ""
 
-#: SUTlib.jl:1176
+#: SUTlib.jl:1265
 msgid "Measure of the significance to the economy of the supply of non-energy goods and services to the energy sector:"
 msgstr ""
 
@@ -151,11 +151,11 @@ msgstr ""
 msgid "domestic production"
 msgstr ""
 
-#: SUTlib.jl:877
+#: SUTlib.jl:938
 msgid "Exogenous prices file '{1}' does not contain all simulation years. Missing {2}."
 msgstr ""
 
-#: SUTlib.jl:1011
+#: SUTlib.jl:1206
 msgid "Configuration file must include a range for the total supply column (or columns, if summed together) in the SUT_ranges block"
 msgstr ""
 
@@ -167,11 +167,15 @@ msgstr ""
 msgid "completed"
 msgstr ""
 
-#: SUTlib.jl:108
+#: AMESlib.jl:126
+msgid "Cell range '{1}' is not found in your input file"
+msgstr ""
+
+#: SUTlib.jl:122
 msgid "Configuration file must include an SUT_ranges block"
 msgstr ""
 
-#: SUTlib.jl:1142
+#: SUTlib.jl:1231
 msgid "Configuration file must include a range for the total intermediate demand row (or rows, if summed together) in the SUT_ranges block"
 msgstr ""
 
@@ -183,7 +187,7 @@ msgstr ""
 msgid "Cell reference '{1}' is not in the correct format (e.g., 'AB3')"
 msgstr ""
 
-#: SUTlib.jl:888
+#: SUTlib.jl:949
 msgid "Product codes '{1}' in input file '{2}' not valid"
 msgstr ""
 
@@ -199,7 +203,7 @@ msgstr ""
 msgid "Running from {1} to {2}:"
 msgstr ""
 
-#: SUTlib.jl:587
+#: SUTlib.jl:648
 msgid "Exogenous real price file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
@@ -207,7 +211,7 @@ msgstr ""
 msgid "net exports to GDP ratio"
 msgstr ""
 
-#: SUTlib.jl:111
+#: SUTlib.jl:162
 msgid "Configuration file must include a range for the supply table in the SUT_ranges block"
 msgstr ""
 
@@ -227,7 +231,7 @@ msgstr ""
 msgid "With configuration file '{1}' (including energy sectors):"
 msgstr ""
 
-#: SUTlib.jl:828; SUTlib.jl:855
+#: SUTlib.jl:889; SUTlib.jl:916
 msgid "Sector codes '{1}' in input file '{2}' not valid"
 msgstr ""
 
@@ -235,11 +239,11 @@ msgstr ""
 msgid "Simulating for {1}: {2}"
 msgstr ""
 
-#: SUTlib.jl:1108
+#: SUTlib.jl:150
 msgid "Configuration file must include a range for the total intermediate supply column (or columns, if summed together) in the SUT_ranges block"
 msgstr ""
 
-#: SUTlib.jl:1175
+#: SUTlib.jl:1264
 msgid "This value should be small: {1:.2f}%."
 msgstr ""
 
@@ -267,27 +271,27 @@ msgstr ""
 msgid "real GDP"
 msgstr ""
 
-#: SUTlib.jl:91
+#: SUTlib.jl:97
 msgid "Configuration file must include simulation years"
 msgstr ""
 
-#: SUTlib.jl:745
-msgid "Value for working age growth rate missing in year {1:d}, with no default"
+#: SUTlib.jl:135
+msgid "Configuration file must include a range for the exports column (or columns, if summed together) in the SUT_ranges block"
 msgstr ""
 
 #: AMEScore.jl:455
 msgid "negative margins"
 msgstr ""
 
-#: SUTlib.jl:1071
-msgid "Configuration file must include a range for the exports column (or columns, if summed together) in the SUT_ranges block"
+#: SUTlib.jl:806
+msgid "Value for working age growth rate missing in year {1:d}, with no default"
 msgstr ""
 
 #: AMEScore.jl:564
 msgid "GDP deflator"
 msgstr ""
 
-#: SUTlib.jl:1096
+#: SUTlib.jl:145
 msgid "Configuration file must include a range for the investment column (or columns, if summed together) in the SUT_ranges block"
 msgstr ""
 
@@ -295,15 +299,15 @@ msgstr ""
 msgid "Getting results from a LEAP version, but no temporary version to revert to"
 msgstr ""
 
-#: SUTlib.jl:458
+#: SUTlib.jl:519
 msgid "LEAP last historical year {1} is later than the end year {2}"
 msgstr ""
 
-#: SUTlib.jl:560
+#: SUTlib.jl:621
 msgid "Exogenous investment file '{1}' does not exist in the 'inputs' folder"
 msgstr ""
 
-#: SUTlib.jl:817
+#: SUTlib.jl:878
 msgid "Exogenous potential output file '{1}' does not contain all simulation years. Missing {2}."
 msgstr ""
 
@@ -327,11 +331,15 @@ msgstr ""
 msgid "labor force gr"
 msgstr ""
 
-#: SUTlib.jl:455
+#: SUTlib.jl:516
 msgid "LEAP last historical year {1} is earlier than the start year {2}"
 msgstr ""
 
-#: SUTlib.jl:404
+#: SUTlib.jl:118
+msgid "Configuration file must include the name of a supply-use table (SUT) or input-output table (IO) in the files block"
+msgstr ""
+
+#: SUTlib.jl:465
 msgid "Sector code '{1}' is listed in 'LEAP-potential-output' but is not included in the AMES model calculations"
 msgstr ""
 
@@ -351,11 +359,15 @@ msgstr ""
 msgid "capital-output ratio"
 msgstr ""
 
-#: SUTlib.jl:830; SUTlib.jl:857
+#: SUTlib.jl:170; SUTlib.jl:1183
+msgid "Configuration file must include a range for the IO table in the SUT_ranges block"
+msgstr ""
+
+#: SUTlib.jl:891; SUTlib.jl:918
 msgid "Sector code '{1}' in input file '{2}' not valid"
 msgstr ""
 
-#: SUTlib.jl:890
+#: SUTlib.jl:951
 msgid "Product code '{1}' in input file '{2}' not valid"
 msgstr ""
 

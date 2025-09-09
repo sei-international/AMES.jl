@@ -1,6 +1,12 @@
 using AMES
 using Test
 
+# To test translation:
+# 	1) Go to Julia prompt
+#	2) Enter 'ENV["LANGUAGE"] = "fr"
+#	3) Return to package environment by pressing ']'
+#	4) Run tests
+
 include("../src/AMESlib.jl")
 using .AMESlib
 

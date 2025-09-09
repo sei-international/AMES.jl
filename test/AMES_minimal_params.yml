@@ -1,5 +1,6 @@
 #---------------------------------------------------------------------------
 # Folder inside the "outputs" folder to store calibration, results, and diagnostics
+#   Note: Optionally, a folder can be named inside the "inputs" folder
 #---------------------------------------------------------------------------
 input_folder: Minimal
 output_folder: Minimal

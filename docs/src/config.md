@@ -493,7 +493,7 @@ Alternatively, separate scenarios can be specified if LEAP receives inputs from 
 # Core information for the LEAP application (optional)
 LEAP-info:
     # The last historical year (equal to LEAP's First Scenario Year - 1): if missing, it is set equal to the the start year
-    last_historical_year: 2010
+    last_historical_year: 2020
     # Scenarios
     input_scenario: Baseline
     result_scenario: Capital Plan
@@ -609,7 +609,7 @@ LEAP-sectors:
 
 ```
 
-### [Passing potential output and prices from LEAP to AMES](@id config-pass-vals-LEAP-to-AMES)
+### [Pulling potential output and prices from LEAP to AMES](@id config-pass-vals-LEAP-to-AMES)
 The final sections say how to pass results for potential output and prices from LEAP to AMES. These are in addition to investment expenditure, which is automatically collected from LEAP and passed to AMES. Any values for potential output and prices drawn from LEAP override those specified in external [input files](@ref params-optional-input-files), if any. (Investment expenditure from LEAP is added to investment specified in external input files.)
 
 The Freedonia configuration file does not specify potential output and prices from LEAP, so the entries are set equal to empty lists. Alternatively, they can be completely ommitted or set to the YAML "no value" symbol, `~`.
